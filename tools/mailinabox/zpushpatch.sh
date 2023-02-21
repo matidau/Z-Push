@@ -45,17 +45,24 @@ $CD_MAILINABOX_DIR
 
 SCRIPT_ZPUSH_VERSION=2$(sed -n -e '/VERSION/ s/.*\=2 *//p' setup/zpush.sh)
 
-if [ ! "$SCRIPT_ZPUSH_VERSION" == "2.6.2" ]; then
+if [ "$SCRIPT_ZPUSH_VERSION" == "2.6.2" ]; then
+	# update Z-Push setup script
+	sed -i "s/VERSION=2.6.2/VERSION=2.6.4-php8-0.2/g" setup/zpush.sh
+	sed -i "s/TARGETHASH=f0e8091a8030e5b851f5ba1f9f0e1a05b8762d80/TARGETHASH=90232303c0326a713932988546fb6274c3313266/g" setup/zpush.sh
+	sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+elif [ "$SCRIPT_ZPUSH_VERSION" == "2.6.4-php8-testing-0.2" ]; then
+	# update Z-Push setup script
+	sed -i "s/VERSION=2.6.4-php8-testing-0.2/VERSION=2.6.4-php8-0.2/g" setup/zpush.sh
+	sed -i "s/TARGETHASH=80ee26707958ee695a86e6ffaf326ee56dce6a14/TARGETHASH=90232303c0326a713932988546fb6274c3313266/g" setup/zpush.sh
+	#sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+elif [ ! "$SCRIPT_ZPUSH_VERSION" == "2.6.2" ]; then
 	echo "Z-Push setup script is not pulling version 2.6.2." 
 	echo "It might have already been patched."
 	echo "Check that your Z-Push needs updating."
 	exit 1
 fi
 
-# update Z-Push setup script
-sed -i "s/VERSION=2.6.2/VERSION=2.6.4-php8-testing-0.2/g" setup/zpush.sh
-sed -i "s/TARGETHASH=f0e8091a8030e5b851f5ba1f9f0e1a05b8762d80/TARGETHASH=80ee26707958ee695a86e6ffaf326ee56dce6a14/g" setup/zpush.sh
-sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+
 
 # Run Mail-in-a-box setup again
 # Start setup script.
