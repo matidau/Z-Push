@@ -16,9 +16,6 @@ The intention is to give a working PHP8 repo for Mail-in-a-box until an "officia
 Most of the PHP 8 and other fixes come from [bob4os' fork](https://github.com/bob4os/Z-Push) and [umgfoin's fork](https://github.com/umgfoin/Z-Push) I've just added a few other bug fixes since, at this point, there's no central development to PR them into after Kopano's unfortunate decision to close the repos and community forums. It seems like everything is compatible with PHP 8.2.
 
 # Testing
-I've tested this with Mail-in-a-box v60.1 and v61.1 and it is working with Gmail, Google Calendar, and Google Contacts for Android, and working with Thunderbird with the TbSync extension.  has tested with 9mail on Android, and Apple mail on later model iPhone.
-
-# Testing
 Tested with Mail-in-a-box v60.1 and v61.1 
 
 And on the following apps & devices: 
