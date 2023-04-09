@@ -45,30 +45,43 @@ $CD_MAILINABOX_DIR
 
 SCRIPT_ZPUSH_VERSION=2$(sed -n -e '/VERSION/ s/.*\=2 *//p' setup/zpush.sh)
 
-VERSION=2.6.4-php8-0.3
-TARGETHASH=1d677eee7eae16e6dcac021cc8633311bf98d79f
+VERSION=2.7.0
+TARGETHASH=a520bbdc1d637c5aac379611053457edd54f2bf0
 
 if [ "$SCRIPT_ZPUSH_VERSION" == "2.6.2" ]; then
 	# update Z-Push setup script
 	sed -i "s/VERSION=2.6.2/VERSION=$VERSION/g" setup/zpush.sh
 	sed -i "s/TARGETHASH=f0e8091a8030e5b851f5ba1f9f0e1a05b8762d80/TARGETHASH=$TARGETHASH/g" setup/zpush.sh
-	sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+	#sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
 elif [ "$SCRIPT_ZPUSH_VERSION" == "2.6.4-php8-testing-0.2" ]; then
 	# update Z-Push setup script
 	sed -i "s/VERSION=2.6.4-php8-testing-0.2/VERSION=$VERSION/g" setup/zpush.sh
 	sed -i "s/TARGETHASH=80ee26707958ee695a86e6ffaf326ee56dce6a14/TARGETHASH=$TARGETHASH/g" setup/zpush.sh
-	#sed -i "s^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^https://github.com/matidau/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+	sed -i "s^https://github.com/matidau/Z-Push/archive/refs/tags/^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^g" setup/zpush.sh
 elif [ "$SCRIPT_ZPUSH_VERSION" == "2.6.4-php8-0.2" ]; then
 	# update Z-Push setup script
 	sed -i "s/VERSION=2.6.4-php8-0.2/VERSION=$VERSION/g" setup/zpush.sh
 	sed -i "s/TARGETHASH=90232303c0326a713932988546fb6274c3313266/TARGETHASH=$TARGETHASH/g" setup/zpush.sh
+	sed -i "s^https://github.com/matidau/Z-Push/archive/refs/tags/^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^g" setup/zpush.sh
 elif [ "$SCRIPT_ZPUSH_VERSION" == "2.6.4-php8-testing-0.3" ]; then
 	# update Z-Push setup script
 	sed -i "s/VERSION=2.6.4-php8-testing-0.3/VERSION=$VERSION/g" setup/zpush.sh
 	sed -i "s/TARGETHASH=5c04ccc3d43ceda3ca42756fc796b6b09b8ffdc0/TARGETHASH=$TARGETHASH/g" setup/zpush.sh
+	sed -i "s^https://github.com/matidau/Z-Push/archive/refs/tags/^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+elif [ "$SCRIPT_ZPUSH_VERSION" == "2.6.4-php8-0.3" ]; then
+	# update Z-Push setup script
+	sed -i "s/VERSION=2.6.4-php8-0.3/VERSION=$VERSION/g" setup/zpush.sh
+	sed -i "s/TARGETHASH=1d677eee7eae16e6dcac021cc8633311bf98d79f/TARGETHASH=$TARGETHASH/g" setup/zpush.sh
+	sed -i "s^https://github.com/matidau/Z-Push/archive/refs/tags/^https://github.com/Z-Hub/Z-Push/archive/refs/tags/^g" setup/zpush.sh
+elif [ "$SCRIPT_ZPUSH_VERSION" == $VERSION ]; then
+	# Already up to date
+	echo "Z-Push setup script is already updated to"
+	echo $VERSION
 elif [ ! "$SCRIPT_ZPUSH_VERSION" == "2.6.2" ]; then
-	echo "Z-Push setup script is not pulling version 2.6.2." 
-	echo "It might have already been patched."
+	echo "Z-Push setup script is not pulling version 2.6.2."
+	echo "Version retrieved:"
+	echo $SCRIPT_ZPUSH_VERSION  
+	echo "It might have already been patched and is using a more up to date version than this script supports."
 	echo "Check that your Z-Push needs updating."
 	exit 1
 fi
