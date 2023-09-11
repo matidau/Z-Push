@@ -183,6 +183,10 @@ define("SYNC_POOMMAIL_CONTENTCLASS", "POOMMAIL:ContentClass"); // Since 12.0
 define("SYNC_POOMMAIL_FLAGTYPE", "POOMMAIL:FlagType"); // Since 12.0
 define("SYNC_POOMMAIL_COMPLETETIME", "POOMMAIL:CompleteTime"); //Since 12.0
 define("SYNC_POOMMAIL_DISALLOWNEWTIMEPROPOSAL", "POOMMAIL:DisallowNewTimeProposal"); // Since 14.0
+// only for internal use - never to be streamed to the mobile
+define("SYNC_POOMMAIL_IGNORE_DISPLAYCC", "POOMMAIL:IgnoreDisplayCC"); // Since 16.0
+define("SYNC_POOMMAIL_IGNORE_DISPLAYBCC", "POOMMAIL:IgnoreDisplayBCC"); // Since 16.0
+define("SYNC_POOMMAIL_IGNORE_PARENTSOURCEKEY", "POOMMAIL:IgnoreParentSourceKey"); // Since 16.0
 
 // Code Page 3: AirNotify - AIRNOTIFY, no longer in use
 define("SYNC_AIRNOTIFY_NOTIFY","AirNotify:Notify");
