@@ -442,6 +442,12 @@ class Sync extends RequestProcessor {
                         ZLog::Write(LOGLEVEL_DEBUG, "HierarchyCache is also not available. Triggering HierarchySync to device");
                     }
 
+                    // AS16: Check if this is a DRAFTS folder - if so, disable FilterType
+                    if (Request::GetProtocolVersion() >= 16.0 && self::$deviceManager->GetFolderTypeFromCacheById($spa->GetFolderId()) == SYNC_FOLDER_TYPE_DRAFTS) {
+                        $spa->SetFilterType(SYNC_FILTERTYPE_DISABLE);
+                        SLog::Write(LOGLEVEL_DEBUG, "HandleSync(): FilterType has been disabled as this is a DRAFTS folder.");
+                    }
+
                     if(($el = self::$decoder->getElementStartTag(SYNC_PERFORM)) && ($el[EN_FLAGS] & EN_FLAGS_CONTENT)) {
                         // We can not proceed here as the content class is unknown
                         if ($status != SYNC_STATUS_SUCCESS) {

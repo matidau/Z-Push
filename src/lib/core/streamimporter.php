@@ -148,7 +148,8 @@ class ImportChangesStream implements IImportChanges {
             $this->encoder->startTag(SYNC_ADD);
         else {
             // on update of an SyncEmail we only export the flags and categories
-            if($message instanceof SyncMail && ((isset($message->flag) && $message->flag instanceof SyncMailFlags) || isset($message->categories))) {
+            // draft emails are fully exported
+            if($message instanceof SyncMail && (!isset($message->isdraft) || $message->isdraft === false) && ((isset($message->flag) && $message->flag instanceof SyncMailFlags) || isset($message->categories))) {
                 $newmessage = new SyncMail();
                 $newmessage->read = $message->read;
                 if (isset($message->flag))              $newmessage->flag = $message->flag;

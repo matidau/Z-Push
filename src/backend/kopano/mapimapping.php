@@ -198,6 +198,7 @@ class MAPIMapping {
             "html"                  => PR_HTML,
             "rtfinsync"             => PR_RTF_IN_SYNC,
             "processed"             => PR_PROCESSED,
+			"messageflags"          => PR_MESSAGE_FLAGS,
         );
     }
 

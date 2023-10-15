@@ -204,6 +204,16 @@ class SyncMail extends SyncObject {
         }
 
         if (Request::GetProtocolVersion() >= 16.0) {
+            $mapping[SYNC_POOMMAIL2_ISDRAFT]                            = array (   self::STREAMER_VAR      => "isdraft",
+                                                                                    self::STREAMER_CHECKS   => array (  self::STREAMER_CHECK_ONEVALUEOF     => [0, 1],),
+                                                                                    self::STREAMER_RONOTIFY => true,
+                                                                                    self::STREAMER_VALUEMAP => array (  0 => "No",
+                                                                                                                        1 => "Yes"));
+            $mapping[SYNC_POOMMAIL2_BCC]                                = array (   self::STREAMER_VAR      => "bcc",
+                                                                                    self::STREAMER_TYPE     => self::STREAMER_TYPE_COMMA_SEPARATED,
+                                                                                    self::STREAMER_CHECKS   => array (  self::STREAMER_CHECK_LENGTHMAX      => 32768,
+                                                                                                                        self::STREAMER_CHECK_EMAIL          => ""));
+            $mapping[SYNC_POOMMAIL2_SEND]                               = array (   self::STREAMER_VAR      => "send");
             $mapping[SYNC_POOMMAIL_IGNORE_DISPLAYCC]                    = array (   self::STREAMER_VAR      => "Displaycc",
                                                                                     self::STREAMER_TYPE     => self::STREAMER_TYPE_IGNORE);
             $mapping[SYNC_POOMMAIL_IGNORE_DISPLAYBCC]                   = array (   self::STREAMER_VAR      => "Displaybcc",
