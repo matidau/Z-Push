@@ -170,9 +170,9 @@ class ImportChangesICS implements IImportChanges {
     public function ConfigContentParameters($contentparameters) {
         $filtertype = $contentparameters->GetFilterType();
 
-		if ($filtertype == SYNC_FILTERTYPE_DISABLE) {
-			$filtertype = false;
-		}
+        if ($filtertype == SYNC_FILTERTYPE_DISABLE) {
+            $filtertype = false;
+        }
 
         switch($contentparameters->GetContentClass()) {
             case "Email":

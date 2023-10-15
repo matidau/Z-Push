@@ -73,10 +73,10 @@ class SyncMail extends SyncObject {
     public $rightsManagementLicense;
     public $asbodypart;
 
-	// AS 16.0 hidden properties for FIND Command
-	public $Displaycc;
-	public $Displaybcc;
-	public $ParentSourceKey;
+    // AS 16.0 hidden properties for FIND Command
+    public $Displaycc;
+    public $Displaybcc;
+    public $ParentSourceKey;
 
 
 

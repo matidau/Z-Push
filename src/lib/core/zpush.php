@@ -45,8 +45,8 @@ class ZPush {
     const ASV_121 = "12.1";
     const ASV_14 = "14.0";
     const ASV_141 = "14.1";
-	const ASV_16 = "16.0";
-	const ASV_161 = "16.1";
+    const ASV_16 = "16.0";
+    const ASV_161 = "16.1";
 
     /**
      * Command codes for base64 encoded requests (AS >= 12.1)

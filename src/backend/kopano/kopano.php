@@ -1419,31 +1419,31 @@ class BackendKopano implements IBackend, ISearchProvider {
         $searchFolder = $this->getSearchFolder();
         $searchFolders = array();
 
-		if ($cpo->GetFindSearchId()) {
-			SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do FIND"));
-			$searchRange = explode('-', $cpo->GetFindRange());
+        if ($cpo->GetFindSearchId()) {
+            SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do FIND"));
+            $searchRange = explode('-', $cpo->GetFindRange());
 
-			$searchRestriction = $this->getFindRestriction($cpo);
-			$searchFolderId = $cpo->GetFindFolderId();
-			$range = $cpo->GetFindRange();
+            $searchRestriction = $this->getFindRestriction($cpo);
+            $searchFolderId = $cpo->GetFindFolderId();
+            $range = $cpo->GetFindRange();
 
-			// if subfolders are required, do a recursive search
-			if ($cpo->GetFindDeepTraversal()) {
-				$flags |= SEARCH_RECURSIVE;
-			}
-		}
-		else {
-			SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do SEARCH"));
-			$searchRestriction = $this->getSearchRestriction($cpo);
-			$searchRange = explode('-', $cpo->GetSearchRange());
-			$searchFolderId = $cpo->GetSearchFolderid();
-			$range = $cpo->GetSearchRange();
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetFindDeepTraversal()) {
+                $flags |= SEARCH_RECURSIVE;
+            }
+        }
+        else {
+            SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do SEARCH"));
+            $searchRestriction = $this->getSearchRestriction($cpo);
+            $searchRange = explode('-', $cpo->GetSearchRange());
+            $searchFolderId = $cpo->GetSearchFolderid();
+            $range = $cpo->GetSearchRange();
 
-			// if subfolders are required, do a recursive search
-			if ($cpo->GetSearchDeepTraversal()) {
-				$flags |= SEARCH_RECURSIVE;
-			}
-		}
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetSearchDeepTraversal()) {
+                $flags |= SEARCH_RECURSIVE;
+            }
+        }
 
         // search only in required folders
         if (!empty($searchFolderId)) {
@@ -2314,40 +2314,40 @@ class BackendKopano implements IBackend, ISearchProvider {
         return $mapiquery;
     }
 
-	/**
-	 * Creates a FIND restriction.
-	 *
-	 * @param ContentParameter $cpo
-	 *
-	 * @return array
-	 */
-	private function getFindRestriction($cpo) {
-		$findText = $cpo->GetFindFreeText();
+    /**
+     * Creates a FIND restriction.
+     *
+     * @param ContentParameter $cpo
+     *
+     * @return array
+     */
+    private function getFindRestriction($cpo) {
+        $findText = $cpo->GetFindFreeText();
 
-		$findFor = "";
-		if (!(stripos($findText, ":") && (stripos($findText, "OR") || stripos($findText, "AND")))) {
-			$findFor = $findText;
-		}
-		else {
-			// just extract a list of words we search for ignoring the fields to be searched in
-			// this list of words is then passed to getSearchRestriction()
-			$words = [];
-			foreach (explode(" OR ", $findText) as $search) {
-				if (stripos($search, ':')) {
-					$value = explode(":", $search)[1];
-				}
-				else {
-					$value = $search;
-				}
-				$words[str_replace('"', '', $value)] = true;
-			}
-			$findFor = implode(" ", array_keys($words));
-		}
-		SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->getFindRestriction(): extracted words: %s", $findFor));
-		$cpo->SetSearchFreeText($findFor);
+        $findFor = "";
+        if (!(stripos($findText, ":") && (stripos($findText, "OR") || stripos($findText, "AND")))) {
+            $findFor = $findText;
+        }
+        else {
+            // just extract a list of words we search for ignoring the fields to be searched in
+            // this list of words is then passed to getSearchRestriction()
+            $words = [];
+            foreach (explode(" OR ", $findText) as $search) {
+                if (stripos($search, ':')) {
+                    $value = explode(":", $search)[1];
+                }
+                else {
+                    $value = $search;
+                }
+                $words[str_replace('"', '', $value)] = true;
+            }
+            $findFor = implode(" ", array_keys($words));
+        }
+        SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->getFindRestriction(): extracted words: %s", $findFor));
+        $cpo->SetSearchFreeText($findFor);
 
-		return $this->getSearchRestriction($cpo);
-	}
+        return $this->getSearchRestriction($cpo);
+    }
 
     /**
      * Resolve recipient based on his email address.
