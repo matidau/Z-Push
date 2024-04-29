@@ -108,18 +108,13 @@ class PingTracking extends InterProcessData {
         if (is_array($pings) && isset($pings[self::$devid][self::$user]) && count($pings[self::$devid][self::$user]) > 1) {
             foreach ($pings[self::$devid][self::$user] as $pid=>$starttime)
                 if ($starttime > self::$start) {
-ZLog::Write(LOGLEVEL_DEBUG, "MultiPINGS: " . "Other process starttime after mine so terminate me - return TRUE");
                     return true;
 				}
                 elseif ($starttime == self::$start) {
+                    // Arbitrary decision to differentiate multiple processes that started at the same second for the same user. Compare PIDs
+                    // If the other process has a bigger PID then kill this process
                     if ($pid > self::$pid) {
-ZLog::Write(LOGLEVEL_DEBUG, "MultiPINGS: " . 'Other process [' . $pid .'] starttime same as mine : Other process ID is "bigger" than mine - return TRUE');
                         return true;
-                    } elseif ($pid < self::$pid) {
-ZLog::Write(LOGLEVEL_DEBUG, "MultiPINGS: " . 'Other process [' . $pid .'] starttime same as mine : Other process ID is "smaller" than mine - return FALSE');
-                    }
-                    else {
-ZLog::Write(LOGLEVEL_DEBUG, "MultiPINGS: " . 'This is my PID - Ignore me - return FALSE');
                     }
                 }
         }
