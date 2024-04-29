@@ -107,8 +107,16 @@ class PingTracking extends InterProcessData {
         // check if there is another (and newer) active ping connection
         if (is_array($pings) && isset($pings[self::$devid][self::$user]) && count($pings[self::$devid][self::$user]) > 1) {
             foreach ($pings[self::$devid][self::$user] as $pid=>$starttime)
-                if ($starttime > self::$start)
+                if ($starttime > self::$start) {
                     return true;
+				}
+                elseif ($starttime == self::$start) {
+                    // Arbitrary decision to differentiate multiple processes that started at the same second for the same user. Compare PIDs
+                    // If the other process has a bigger PID then kill this process
+                    if ($pid > self::$pid) {
+                        return true;
+                    }
+                }
         }
 
         return false;
