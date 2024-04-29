@@ -1204,7 +1204,7 @@ class MAPIProvider {
         if (isset($message->asbody) && $message->asbody instanceof SyncBaseBody) {
             // iOS+Nine send a RFC822 message
             if (isset($message->asbody->type) && $message->asbody->type == SYNC_BODYPREFERENCE_MIME) {
-                SLog::Write(LOGLEVEL_DEBUG, "MAPIProvider->setEmail(): Use the mapi_inetmapi_imtomapi function to save draft email");
+                Zlog::Write(LOGLEVEL_DEBUG, "MAPIProvider->setEmail(): Use the mapi_inetmapi_imtomapi function to save draft email");
                 $mime = stream_get_contents($message->asbody->data);
                 $ab = mapi_openaddressbook($this->session);
                 mapi_inetmapi_imtomapi($this->session, $this->store, $ab, $mapimessage, $mime, []);

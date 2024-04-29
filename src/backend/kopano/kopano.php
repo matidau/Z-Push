@@ -1420,7 +1420,7 @@ class BackendKopano implements IBackend, ISearchProvider {
         $searchFolders = array();
 
         if ($cpo->GetFindSearchId()) {
-            SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do FIND"));
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do FIND"));
             $searchRange = explode('-', $cpo->GetFindRange());
 
             $searchRestriction = $this->getFindRestriction($cpo);
@@ -1433,7 +1433,7 @@ class BackendKopano implements IBackend, ISearchProvider {
             }
         }
         else {
-            SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do SEARCH"));
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do SEARCH"));
             $searchRestriction = $this->getSearchRestriction($cpo);
             $searchRange = explode('-', $cpo->GetSearchRange());
             $searchFolderId = $cpo->GetSearchFolderid();
@@ -2343,7 +2343,7 @@ class BackendKopano implements IBackend, ISearchProvider {
             }
             $findFor = implode(" ", array_keys($words));
         }
-        SLog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->getFindRestriction(): extracted words: %s", $findFor));
+        Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->getFindRestriction(): extracted words: %s", $findFor));
         $cpo->SetSearchFreeText($findFor);
 
         return $this->getSearchRestriction($cpo);
