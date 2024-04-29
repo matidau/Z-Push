@@ -1,3 +1,4 @@
+Released under the GNU Affero General Public License (AGPL), version 3
 <!-- If you haven't released code to this project under github before please consider doing so now, the below is alternative wording that you can choose to use -->
 <!-- Released under the GNU Affero General Public License (AGPL), version 3 and Trademark Additional Terms. -->
 
