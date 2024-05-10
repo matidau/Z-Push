@@ -73,6 +73,13 @@ class SyncMail extends SyncObject {
     public $rightsManagementLicense;
     public $asbodypart;
 
+    // AS 16.0 hidden properties for FIND Command
+    public $Displaycc;
+    public $Displaybcc;
+    public $ParentSourceKey;
+
+
+
     function __construct() {
         $mapping = array (
                     SYNC_POOMMAIL_TO                                    => array (  self::STREAMER_VAR      => "to",
@@ -194,6 +201,25 @@ class SyncMail extends SyncObject {
                                                                                     self::STREAMER_TYPE     => "SyncRightsManagementLicense");
             $mapping[SYNC_AIRSYNCBASE_BODYPART]                         = array (   self::STREAMER_VAR      => "asbodypart",
                                                                                     self::STREAMER_TYPE     => "SyncBaseBodyPart");
+        }
+
+        if (Request::GetProtocolVersion() >= 16.0) {
+            $mapping[SYNC_POOMMAIL2_ISDRAFT]                            = array (   self::STREAMER_VAR      => "isdraft",
+                                                                                    self::STREAMER_CHECKS   => array (  self::STREAMER_CHECK_ONEVALUEOF     => [0, 1],),
+                                                                                    self::STREAMER_RONOTIFY => true,
+                                                                                    self::STREAMER_VALUEMAP => array (  0 => "No",
+                                                                                                                        1 => "Yes"));
+            $mapping[SYNC_POOMMAIL2_BCC]                                = array (   self::STREAMER_VAR      => "bcc",
+                                                                                    self::STREAMER_TYPE     => self::STREAMER_TYPE_COMMA_SEPARATED,
+                                                                                    self::STREAMER_CHECKS   => array (  self::STREAMER_CHECK_LENGTHMAX      => 32768,
+                                                                                                                        self::STREAMER_CHECK_EMAIL          => ""));
+            $mapping[SYNC_POOMMAIL2_SEND]                               = array (   self::STREAMER_VAR      => "send");
+            $mapping[SYNC_POOMMAIL_IGNORE_DISPLAYCC]                    = array (   self::STREAMER_VAR      => "Displaycc",
+                                                                                    self::STREAMER_TYPE     => self::STREAMER_TYPE_IGNORE);
+            $mapping[SYNC_POOMMAIL_IGNORE_DISPLAYBCC]                   = array (   self::STREAMER_VAR      => "Displaybcc",
+                                                                                    self::STREAMER_TYPE     => self::STREAMER_TYPE_IGNORE);
+            $mapping[SYNC_POOMMAIL_IGNORE_PARENTSOURCEKEY]              = array (   self::STREAMER_VAR      => "ParentSourceKey",
+                                                                                    self::STREAMER_TYPE     => self::STREAMER_TYPE_IGNORE);
         }
 
         parent::__construct($mapping);

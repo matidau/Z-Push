@@ -637,6 +637,7 @@ class Utils {
             case ZPush::COMMAND_DELETECOLLECTION:     return 'DeleteCollection';
             case ZPush::COMMAND_MOVECOLLECTION:       return 'MoveCollection';
             case ZPush::COMMAND_NOTIFY:               return 'Notify';
+            case ZPush::COMMAND_FIND:               return 'Find';
 
             // Webservice commands
             case ZPush::COMMAND_WEBSERVICE_DEVICE:    return 'WebserviceDevice';
@@ -682,6 +683,7 @@ class Utils {
             case 'DeleteCollection':     return ZPush::COMMAND_DELETECOLLECTION;
             case 'MoveCollection':       return ZPush::COMMAND_MOVECOLLECTION;
             case 'Notify':               return ZPush::COMMAND_NOTIFY;
+            case 'Find':                 return ZPush::COMMAND_FIND;
 
             // Webservice commands
             case 'WebserviceDevice':     return ZPush::COMMAND_WEBSERVICE_DEVICE;

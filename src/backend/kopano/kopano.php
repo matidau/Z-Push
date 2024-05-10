@@ -125,7 +125,7 @@ class BackendKopano implements IBackend, ISearchProvider {
      * @return string       AS version constant
      */
     public function GetSupportedASVersion() {
-        return ZPush::ASV_141;
+        return ZPush::ASV_161;
     }
 
     /**
@@ -1414,11 +1414,37 @@ class BackendKopano implements IBackend, ISearchProvider {
      * @return array
      */
     public function GetMailboxSearchResults($cpo) {
+        $items = array();
+        $flags = 0;
         $searchFolder = $this->getSearchFolder();
-        $searchRestriction = $this->getSearchRestriction($cpo);
-        $searchRange = explode('-', $cpo->GetSearchRange());
-        $searchFolderId = $cpo->GetSearchFolderid();
         $searchFolders = array();
+
+        if ($cpo->GetFindSearchId()) {
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do FIND"));
+            $searchRange = explode('-', $cpo->GetFindRange());
+
+            $searchRestriction = $this->getFindRestriction($cpo);
+            $searchFolderId = $cpo->GetFindFolderId();
+            $range = $cpo->GetFindRange();
+
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetFindDeepTraversal()) {
+                $flags |= SEARCH_RECURSIVE;
+            }
+        }
+        else {
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->GetMailboxSearchResults(): Do SEARCH"));
+            $searchRestriction = $this->getSearchRestriction($cpo);
+            $searchRange = explode('-', $cpo->GetSearchRange());
+            $searchFolderId = $cpo->GetSearchFolderid();
+            $range = $cpo->GetSearchRange();
+
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetSearchDeepTraversal()) {
+                $flags |= SEARCH_RECURSIVE;
+            }
+        }
+
         // search only in required folders
         if (!empty($searchFolderId)) {
             $searchFolderEntryId = mapi_msgstore_entryidfromsourcekey($this->store, hex2bin($searchFolderId));
@@ -1429,13 +1455,6 @@ class BackendKopano implements IBackend, ISearchProvider {
             $tmp = mapi_getprops($this->store, array(PR_ENTRYID,PR_DISPLAY_NAME,PR_IPM_SUBTREE_ENTRYID));
             $searchFolders[] = $tmp[PR_IPM_SUBTREE_ENTRYID];
         }
-        $items = array();
-        $flags = 0;
-        // if subfolders are required, do a recursive search
-        if ($cpo->GetSearchDeepTraversal()) {
-            $flags |= SEARCH_RECURSIVE;
-        }
-
         mapi_folder_setsearchcriteria($searchFolder, $searchRestriction, $searchFolders, $flags);
 
         $table = mapi_folder_getcontentstable($searchFolder);
@@ -1455,11 +1474,12 @@ class BackendKopano implements IBackend, ISearchProvider {
 
         $cnt = count($rows);
         $items['searchtotal'] = $cnt;
-        $items["range"] = $cpo->GetSearchRange();
+        $items["range"] = $range;
         for ($i = 0; $i < $cnt; $i++) {
             $items[$i]['class'] = 'Email';
             $items[$i]['longid'] = ZPush::GetDeviceManager()->GetFolderIdForBackendId(bin2hex($rows[$i][PR_PARENT_SOURCE_KEY])) . ":" . bin2hex($rows[$i][PR_SOURCE_KEY]);
             $items[$i]['folderid'] = bin2hex($rows[$i][PR_PARENT_SOURCE_KEY]);
+            $items[$i]['serverid'] = bin2hex($rows[$i][PR_SOURCE_KEY]);
         }
         return $items;
     }
@@ -2292,6 +2312,41 @@ class BackendKopano implements IBackend, ISearchProvider {
         $mapiquery = array(RES_AND, $resAnd);
 
         return $mapiquery;
+    }
+
+    /**
+     * Creates a FIND restriction.
+     *
+     * @param ContentParameter $cpo
+     *
+     * @return array
+     */
+    private function getFindRestriction($cpo) {
+        $findText = $cpo->GetFindFreeText();
+
+        $findFor = "";
+        if (!(stripos($findText, ":") && (stripos($findText, "OR") || stripos($findText, "AND")))) {
+            $findFor = $findText;
+        }
+        else {
+            // just extract a list of words we search for ignoring the fields to be searched in
+            // this list of words is then passed to getSearchRestriction()
+            $words = [];
+            foreach (explode(" OR ", $findText) as $search) {
+                if (stripos($search, ':')) {
+                    $value = explode(":", $search)[1];
+                }
+                else {
+                    $value = $search;
+                }
+                $words[str_replace('"', '', $value)] = true;
+            }
+            $findFor = implode(" ", array_keys($words));
+        }
+        Zlog::Write(LOGLEVEL_DEBUG, sprintf("Grommunio->getFindRestriction(): extracted words: %s", $findFor));
+        $cpo->SetSearchFreeText($findFor);
+
+        return $this->getSearchRestriction($cpo);
     }
 
     /**
