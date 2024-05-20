@@ -1962,7 +1962,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return string       AS version constant
      */
     public function GetSupportedASVersion() {
-        return ZPush::ASV_14;
+        return ZPush::ASV_161;
     }
 
 
