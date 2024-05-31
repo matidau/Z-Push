@@ -125,6 +125,12 @@ class BackendCalDAV extends BackendDiff {
         $folders = array();
         $calendars = $this->_caldav->FindCalendars();
         foreach ($calendars as $val) {
+            if ($this->GetFolderIsIncluded($val->url) == false) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderList() Excluded folder '%s'", $val->url));
+                continue;
+            }
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderList() Included folder '%s'", $val->url));
+
             $fpath = explode("/", $val->url, -1);
             if (is_array($fpath)) {
                 $folderid = array_pop($fpath);
@@ -2199,5 +2205,68 @@ class BackendCalDAV extends BackendDiff {
 
         return $result;
     }
+    
+    /**
+     * Filter discovered calendar urls, by inclusion or exclusion.
+     * The default is to always include the calendar collection, unless either include or exclude is uncommented and configured.
+     * The calendar collection is included, either when the include filter is not configured, or when the include filter matches.
+     * The calendar collection is excluded, when the exclude filter is configured and it matches. Exclude always wins over include.
+     * The defined constants can either be a string or an array of multiple strings, to provide multiple filters.
+     */
+    private function GetFolderIsIncluded($url) {
+        // Exist and retain original behaviour.
+        if ((defined('CALDAV_PATH_INCLUDE') == false) && (defined('CALDAV_PATH_EXCLUDE') == false)) {
+            return true;
+        }
+        if ($url === null) {
+            return true;
+        }
 
+        // Convert to array.
+        $includes = array();
+        if (defined('CALDAV_PATH_INCLUDE') == true) {
+            if (is_array(CALDAV_PATH_INCLUDE) == true) {
+                $includes = CALDAV_PATH_INCLUDE;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Include filter is an array with %s elements", count($includes)));
+            } else if (CALDAV_PATH_INCLUDE !== '') {
+                $includes = array(CALDAV_PATH_INCLUDE);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Include filter is a string '%s'", CALDAV_PATH_INCLUDE));
+            }
+        }
+
+        $excludes = array();
+        if (defined('CALDAV_PATH_EXCLUDE') == true) {
+            if (is_array(CALDAV_PATH_EXCLUDE) == true) {
+                $excludes = CALDAV_PATH_EXCLUDE;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Exclude filter is an array with %s elements", count($excludes)));
+            } else if (CALDAV_PATH_EXCLUDE !== '') {
+                $excludes = array(CALDAV_PATH_EXCLUDE);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Exclude filter is a string '%s'", CALDAV_PATH_EXCLUDE));
+            }
+        }
+
+        // Test for matches.
+        $foundOneInclude = (count($includes) == 0);
+        foreach ($includes as $include) {
+            if (fnmatch($include, $url) == true) {
+                $foundOneInclude = true;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Include filter '%s' matches '%s'", $include, $url));
+                break;
+            }
+        }
+
+        $foundNoExcludes = (count($excludes) == 0);
+        $foundOneExclude = false;
+        foreach ($excludes as $exclude) {
+            if (fnmatch($exclude, $url) == true) {
+                $foundOneExclude = true;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCalDAV::GetFolderIsIncluded() Exclude filter '%s' matches '%s'", $exclude, $url));
+                break;
+            }
+        }
+        $foundNoExcludes = ($foundOneExclude == false);
+
+        return (($foundOneInclude == true) && ($foundNoExcludes == true));
+    } // GetFolderIsIncluded
+    
 };
