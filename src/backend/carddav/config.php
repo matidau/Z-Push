@@ -101,5 +101,5 @@ define('CARDDAV_URL_VCARD_EXTENSION', '.vcf');
 // The defined constants can either be a string or an array of multiple strings, to provide multiple filters.
 // Exclude example: '*/archived-addresses/'
 // Include example: '*sync*'
-//define('CARDDAV_PATH_EXCLUDE', '');
+//define('CARDDAV_PATH_INCLUDE', '');
 //define('CARDDAV_PATH_EXCLUDE', '');
