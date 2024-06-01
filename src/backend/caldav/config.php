@@ -62,5 +62,5 @@ define('CALDAV_MAX_SYNC_PERIOD', 2147483647);
 // The defined constants can either be a string or an array of multiple strings, to provide multiple filters.
 // Exclude example: '*/archived-appointments/'
 // Include example: '*sync*'
-//define('CALDAV_PATH_EXCLUDE', '');
+//define('CALDAV_PATH_INCLUDE', '');
 //define('CALDAV_PATH_EXCLUDE', '');
