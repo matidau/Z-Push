@@ -296,7 +296,7 @@ class Utils {
     static public function GetCutOffDate($filtertype) {
         $back = Utils::GetFiltertypeInterval($filtertype);
 
-        if ($back === false) {
+        if (($back === false) || ($back == SYNC_FILTERTYPE_DISABLE)) {
             return 0; // unlimited
         }
 
