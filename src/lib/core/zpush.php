@@ -447,6 +447,11 @@ class ZPush {
             }
         }
 
+        // Check Iconv option
+        if (!defined('ICONV_OPTION')) {
+            define('ICONV_OPTION', "");
+        }
+                        
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("Used timezone '%s'", date_default_timezone_get()));
 
         // get the statemachine, which will also try to load the backend.. This could throw errors
