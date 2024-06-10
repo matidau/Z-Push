@@ -46,6 +46,20 @@
  * @link        http://pear.php.net/package/Mail/
  */
 
+ /**
+ * Z-Push changes
+ *
+ * removed PEAR dependency by implementing own raiseError()
+ * cast $address to string for explode() for PHP 8.x compatibility
+ * removed public access to num_groups
+ * change indetatation for parseAddressList
+ *
+ * Reference implementation used:
+ * https://github.com/pear/Mail/tree/v2.0.0
+ *
+ *
+ */
+
 /**
  * RFC 822 Email address list validation Utility
  *
@@ -70,7 +84,6 @@
  * @license BSD
  * @package Mail
  */
-
 class Mail_RFC822 {
 
     /**
@@ -124,6 +137,7 @@ class Mail_RFC822 {
     /**
      * The number of groups that have been found in the address list.
      * @var integer $num_groups
+     * // Z-Push removal: access public
      */
     var $num_groups = 0;
 
@@ -173,6 +187,7 @@ class Mail_RFC822 {
      */
     public function parseAddressList($address = null, $default_domain = null, $nest_groups = null, $validate = null, $limit = null)
     {
+        // Z-Push Change: indentation
         if (version_compare(PHP_VERSION, '8.0.0', '<')) {
             if (!isset($this) || !isset($this->mailRFC822)) {
                 $warn = "Calling non-static methods statically is no longer supported since PHP 8";
@@ -202,6 +217,7 @@ class Mail_RFC822 {
         while ($this->address = $this->_splitAddresses($this->address));
 
         if ($this->address === false || isset($this->error)) {
+            // Z-Push change rasiseError dependancy
             //require_once 'PEAR.php';
             return $this->raiseError($this->error);
         }
@@ -212,6 +228,7 @@ class Mail_RFC822 {
             $valid = $this->_validateAddress($address);
 
             if ($valid === false || isset($this->error)) {
+                // Z-Push change: rasiseError dependancy
                 //require_once 'PEAR.php';
                 return $this->raiseError($this->error);
             }
@@ -252,6 +269,7 @@ class Mail_RFC822 {
         }
 
         // Split the string based on the above ten or so lines.
+        // Z-Push change: (string) cast
         $parts  = explode($split_char, (string) $address);
         $string = $this->_splitCheck($parts, $split_char);
 
@@ -284,6 +302,7 @@ class Mail_RFC822 {
 
         // Remove the now stored address from the initial line, the +1
         // is to account for the explode character.
+        // Z-Push change: (string) cast
         $address = trim(substr((string) $address, strlen($string) + 1));
 
         // If the next char is a comma and this was a group, then
@@ -313,6 +332,7 @@ class Mail_RFC822 {
     protected function _isGroup($address)
     {
         // First comma not in quotes, angles or escaped:
+        // Z-Push change: (string) cast
         $parts  = explode(',', (string) $address);
         $string = $this->_splitCheck($parts, ',');
 

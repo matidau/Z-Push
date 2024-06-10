@@ -52,7 +52,7 @@
  * removed PEAR dependency by implementing own raiseError()
  *
  * Reference implementation used:
- * http://download.pear.php.net/package/Mail-1.4.1.tgz
+ * https://github.com/pear/Mail/tree/v2.0.0
  *
  *
  */
@@ -144,16 +144,19 @@ class Mail_sendmail extends Mail {
     public function send($recipients, $headers, $body)
     {
         if (!is_array($headers)) {
+            // Z-Push change: rasiseError dependancy
             return Mail_sendmail::raiseError('$headers must be an array');
         }
 
         $result = $this->_sanitizeHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($result, 'PEAR_Error')) {
         if ($result === false) {
             return $result;
         }
 
         $recipients = $this->parseRecipients($recipients);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($recipients, 'PEAR_Error')) {
         if ($recipients === false) {
             return $recipients;
@@ -161,6 +164,7 @@ class Mail_sendmail extends Mail {
         $recipients = implode(' ', array_map('escapeshellarg', $recipients));
 
         $headerElements = $this->prepareHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($headerElements, 'PEAR_Error')) {
         if ($headerElements === false) {
             return $headerElements;
@@ -175,11 +179,13 @@ class Mail_sendmail extends Mail {
         }
 
         if (!isset($from)) {
+            // Z-Push change: rasiseError dependancy
             return Mail_sendmail::raiseError('No from address given.');
         } elseif (strpos($from, ' ') !== false ||
                   strpos($from, ';') !== false ||
                   strpos($from, '&') !== false ||
                   strpos($from, '`') !== false) {
+            // Z-Push change: rasiseError dependancy
             return Mail_sendmail::raiseError('From address specified with dangerous characters.');
         }
 
@@ -187,6 +193,7 @@ class Mail_sendmail extends Mail {
 
         $mail = @popen($this->sendmail_path . (!empty($this->sendmail_args) ? ' ' . $this->sendmail_args : '') . " -f$from -- $recipients", 'w');
         if (!$mail) {
+            // Z-Push change: rasiseError dependancy
             return Mail_sendmail::raiseError('Failed to open sendmail [' . $this->sendmail_path . '] for execution.');
         }
 
@@ -203,6 +210,7 @@ class Mail_sendmail extends Mail {
         }
 
         if ($result != 0) {
+            // Z-Push change: rasiseError dependancy
             return Mail_sendmail::raiseError('sendmail returned error code ' . $result,
                                     $result);
         }

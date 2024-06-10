@@ -51,7 +51,7 @@
  * removed PEAR dependency by implementing own raiseError()
  *
  * Reference implementation used:
- * http://download.pear.php.net/package/Mail-1.4.1.tgz
+ * https://github.com/pear/Mail/tree/v2.0.0
  *
  *
  */
@@ -116,10 +116,12 @@ class Mail_mail extends Mail {
     public function send($recipients, $headers, $body)
     {
         if (!is_array($headers)) {
+            // Z-Push change: rasiseError dependancy
             return Mail_mail::raiseError('$headers must be an array');
         }
 
         $result = $this->_sanitizeHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($result, 'PEAR_Error')) {
         if ($result === false) {
             return $result;
@@ -144,6 +146,7 @@ class Mail_mail extends Mail {
 
         // Flatten the headers out.
         $headerElements = $this->prepareHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($headerElements, 'PEAR_Error')) {
         if ($headerElements === false) {
             return $headerElements;
@@ -162,6 +165,7 @@ class Mail_mail extends Mail {
         // If the mail() function returned failure, we need to create a
         // PEAR_Error object and return it instead of the boolean result.
         if ($result === false) {
+            // Z-Push change: rasiseError dependancy
             $result = Mail_mail::raiseError('mail() returned failure');
         }
 

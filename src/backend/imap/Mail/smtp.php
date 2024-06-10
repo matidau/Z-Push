@@ -50,9 +50,10 @@
  * Z-Push changes
  *
  * removed PEAR dependency by implementing own raiseError()
+ * verify_peer, verify_peer_name, allow_self_signed
  *
  * Reference implementation used:
- * http://download.pear.php.net/package/Mail-1.4.1.tgz
+ * https://github.com/pear/Mail/tree/v2.0.0
  *
  *
  */
@@ -245,6 +246,7 @@ class Mail_smtp extends Mail {
      */
     var $queued_as = null;
 
+    // Z-Push addition: verify_peer, verify_peer_name, allow_self_signed
     /**
      * Require verification of SSL certificate used. Default is TRUE.
      *
@@ -286,6 +288,7 @@ class Mail_smtp extends Mail {
      *     persist              Should the SMTP connection persist?
      *     pipelining           Use SMTP command pipelining
      *     socket_options       Socket stream_context_create() options.
+     * // Z-Push addition: verify_peer, verify_peer_name, allow_self_signed
      *     verify_peer          Require verification of SSL certificate used.
      *     verify_peer_name     Require verification of peer name.
      *     allow_self_signed    Allow self-signed certificates. Requires verify_peer.
@@ -311,6 +314,7 @@ class Mail_smtp extends Mail {
         if (isset($params['persist'])) $this->persist = (bool)$params['persist'];
         if (isset($params['pipelining'])) $this->pipelining = (bool)$params['pipelining'];
         if (isset($params['socket_options'])) $this->socket_options = $params['socket_options'];
+        // Z-Push addition: verify_peer, verify_peer_name, allow_self_signed
         if (isset($params['verify_peer'])) $this->verify_peer = $params['verify_peer'];
         if (isset($params['verify_peer_name'])) $this->verify_peer_name = $params['verify_peer_name'];
         if (isset($params['allow_self_signed'])) $this->allow_self_signed = $params['allow_self_signed'];
@@ -368,18 +372,21 @@ class Mail_smtp extends Mail {
     {
         /* If we don't already have an SMTP object, create one. */
         $result = $this->getSMTPObject();
+        // Z-Push change: rasiseError dependancy
         //if (PEAR::isError($result)) {
         if ($this->_smtp === false) {
             return $result;
         }
 
         if (!is_array($headers)) {
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError('$headers must be an array');
         }
 
         $this->_sanitizeHeaders($headers);
 
         $headerElements = $this->prepareHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($headerElements, 'PEAR_Error')) {
         if ($headerElements === false) {
             $this->_smtp->rset();
@@ -396,6 +403,7 @@ class Mail_smtp extends Mail {
 
         if (!isset($from)) {
             $this->_smtp->rset();
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError('No From: address has been provided',
                                     PEAR_MAIL_SMTP_ERROR_FROM);
         }
@@ -406,14 +414,17 @@ class Mail_smtp extends Mail {
                 $params .= ' ' . $key . (is_null($val) ? '' : '=' . $val);
             }
         }
+        // Z-Push change: rasiseError dependancy
         //if (PEAR::isError($res = $this->_smtp->mailFrom($from, ltrim($params)))) {
         if (($res = $this->_smtp->mailFrom($from, ltrim($params))) === false) {
             $error = $this->_error("Failed to set sender: $from", $res);
             $this->_smtp->rset();
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_SENDER);
         }
 
         $recipients = $this->parseRecipients($recipients);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($recipients, 'PEAR_Error')) {
         if ($recipients === false) {
             $this->_smtp->rset();
@@ -422,10 +433,12 @@ class Mail_smtp extends Mail {
 
         foreach ($recipients as $recipient) {
             $res = $this->_smtp->rcptTo($recipient);
+            // Z-Push change: rasiseError dependancy
             //if (is_a($res, 'PEAR_Error')) {
             if ($res === false) {
                 $error = $this->_error("Failed to add recipient: $recipient", $res);
                 $this->_smtp->rset();
+                // Z-Push change: rasiseError dependancy
                 return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_RECIPIENT);
             }
         }
@@ -445,10 +458,12 @@ class Mail_smtp extends Mail {
          * ideal if we're connecting to a round-robin of relay servers and need to track which exact one took the email */
         $this->greeting = $this->_smtp->getGreeting();
 
+        // Z-Push change: rasiseError dependancy
         //if (is_a($res, 'PEAR_Error')) {
         if ($res === false) {
             $error = $this->_error('Failed to send data', $res);
             $this->_smtp->rset();
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_DATA);
         }
 
@@ -476,6 +491,7 @@ class Mail_smtp extends Mail {
                                      $this->localhost,
                                      $this->pipelining,
                                      0,
+                                     // Z-Push change: verify_peer, verify_peer_name, allow_self_signed
                                      $this->socket_options,
                                      $this->verify_peer,
                                      $this->verify_peer_name,
@@ -483,6 +499,7 @@ class Mail_smtp extends Mail {
 
         /* If we still don't have an SMTP object at this point, fail. */
         if (is_object($this->_smtp) === false) {
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError('Failed to create a Net_SMTP object',
                                     PEAR_MAIL_SMTP_ERROR_CREATE);
         }
@@ -493,11 +510,13 @@ class Mail_smtp extends Mail {
         }
 
         /* Attempt to connect to the configured SMTP server. */
+        // Z-Push change: rasiseError dependancy
         //if (PEAR::isError($res = $this->_smtp->connect($this->timeout))) {
         if (($res = $this->_smtp->connect($this->timeout)) === false) {
             $error = $this->_error('Failed to connect to ' .
                                    $this->host . ':' . $this->port,
                                    $res);
+            // Z-Push change: rasiseError dependancy
             return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_CONNECT);
         }
 
@@ -507,6 +526,7 @@ class Mail_smtp extends Mail {
 
             $tls = $this->starttls === false ? false : true;
 
+            // Z-Push change: rasiseError dependancy
             //if (PEAR::isError($res = $this->_smtp->auth($this->username,
             //                                            $this->password,
             //                                            $method,
@@ -515,6 +535,7 @@ class Mail_smtp extends Mail {
                 $error = $this->_error("$method authentication failure",
                                        $res);
                 $this->_smtp->rset();
+                // Z-Push change: rasiseError dependancy
                 return Mail_smtp::raiseError($error, PEAR_MAIL_SMTP_ERROR_AUTH);
             }
         }
@@ -604,6 +625,7 @@ class Mail_smtp extends Mail {
 
         /* Build our standardized error string. */
         return $text
+            // Z-Push change: rasiseError dependancy
             //. ' [SMTP: ' . $error->getMessage()
             . ' [SMTP: '
             . " (code: $code, response: $response)]";
