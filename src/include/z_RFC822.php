@@ -46,6 +46,20 @@
  * @link        http://pear.php.net/package/Mail/
  */
 
+ /**
+ * Z-Push changes
+ *
+ * removed PEAR dependency by implementing own raiseError()
+ * cast $address to string for explode() for PHP 8.x compatibility
+ * removed public access to num_groups
+ * change indetatation for parseAddressList
+ *
+ * Reference implementation used:
+ * https://github.com/pear/Mail/tree/v2.0.0
+ *
+ *
+ */
+
 /**
  * RFC 822 Email address list validation Utility
  *
@@ -60,7 +74,8 @@
  * How do I use it?
  *
  * $address_string = 'My Group: "Richard" <richard@localhost> (A comment), ted@example.com (Ted Bloggs), Barney;';
- * $structure = Mail_RFC822::parseAddressList($address_string, 'example.com', true)
+ * $parser = new Mail_RFC822();
+ * $structure = $parser->parseAddressList($address_string, 'example.com', true);
  * print_r($structure);
  *
  * @author  Richard Heyes <richard@phpguru.org>
@@ -69,7 +84,6 @@
  * @license BSD
  * @package Mail
  */
-
 class Mail_RFC822 {
 
     /**
@@ -123,6 +137,7 @@ class Mail_RFC822 {
     /**
      * The number of groups that have been found in the address list.
      * @var integer $num_groups
+     * // Z-Push removal: access public
      */
     var $num_groups = 0;
 
@@ -172,9 +187,14 @@ class Mail_RFC822 {
      */
     public function parseAddressList($address = null, $default_domain = null, $nest_groups = null, $validate = null, $limit = null)
     {
-        if (!isset($this) || !isset($this->mailRFC822)) {
-            $obj = new Mail_RFC822($address, $default_domain, $nest_groups, $validate, $limit);
-            return $obj->parseAddressList();
+        // Z-Push Change: indentation
+        if (version_compare(PHP_VERSION, '8.0.0', '<')) {
+            if (!isset($this) || !isset($this->mailRFC822)) {
+                $warn = "Calling non-static methods statically is no longer supported since PHP 8";
+                trigger_error($warn, E_USER_NOTICE);
+                $obj = new Mail_RFC822($address, $default_domain, $nest_groups, $validate, $limit);
+                return $obj->parseAddressList();
+            }
         }
 
         if (isset($address))        $this->address        = $address;
@@ -197,6 +217,7 @@ class Mail_RFC822 {
         while ($this->address = $this->_splitAddresses($this->address));
 
         if ($this->address === false || isset($this->error)) {
+            // Z-Push change rasiseError dependancy
             //require_once 'PEAR.php';
             return $this->raiseError($this->error);
         }
@@ -207,6 +228,7 @@ class Mail_RFC822 {
             $valid = $this->_validateAddress($address);
 
             if ($valid === false || isset($this->error)) {
+                // Z-Push change: rasiseError dependancy
                 //require_once 'PEAR.php';
                 return $this->raiseError($this->error);
             }
@@ -229,6 +251,9 @@ class Mail_RFC822 {
      */
     protected function _splitAddresses($address)
     {
+        $is_group = false;
+        $split_char = ',';
+
         if (!empty($this->limit) && count($this->addresses) == $this->limit) {
             return '';
         }
@@ -244,6 +269,7 @@ class Mail_RFC822 {
         }
 
         // Split the string based on the above ten or so lines.
+        // Z-Push change: (string) cast
         $parts  = explode($split_char, (string) $address);
         $string = $this->_splitCheck($parts, $split_char);
 
@@ -276,6 +302,7 @@ class Mail_RFC822 {
 
         // Remove the now stored address from the initial line, the +1
         // is to account for the explode character.
+        // Z-Push change: (string) cast
         $address = trim(substr((string) $address, strlen($string) + 1));
 
         // If the next char is a comma and this was a group, then
@@ -305,6 +332,7 @@ class Mail_RFC822 {
     protected function _isGroup($address)
     {
         // First comma not in quotes, angles or escaped:
+        // Z-Push change: (string) cast
         $parts  = explode(',', (string) $address);
         $string = $this->_splitCheck($parts, ',');
 
@@ -439,6 +467,7 @@ class Mail_RFC822 {
      */
     protected function _validateAddress($address)
     {
+        $structure = null;
         $is_group = false;
         $addresses = array();
 
@@ -479,7 +508,7 @@ class Mail_RFC822 {
         }
 
         // Trim the whitespace from all of the address strings.
-        array_map('trim', $addresses);
+        $addresses = array_map('trim', $addresses);
 
         // Validate each mailbox.
         // Format could be one of: name <geezer@domain.com>
@@ -616,6 +645,7 @@ class Mail_RFC822 {
         $phrase  = '';
         $comment = '';
         $comments = array();
+        $addr_spec = null;
 
         // Catch any RFC822 comments and store them separately.
         $_mailbox = $mailbox;
@@ -773,6 +803,7 @@ class Mail_RFC822 {
     {
         // Note the different use of $subdomains and $sub_domains
         $subdomains = explode('.', $domain);
+        $sub_domains = array();
 
         while (count($subdomains) > 0) {
             $sub_domains[] = $this->_splitCheck($subdomains, '.');
