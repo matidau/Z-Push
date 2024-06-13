@@ -50,10 +50,11 @@
  * Z-Push changes
  *
  * removed PEAR dependency by implementing own raiseError()
+ * Remove duplicated addresses
+ * remove include dependancy
  *
  * Reference implementation used:
- * http://download.pear.php.net/package/Mail-1.2.0.tgz
- * SVN trunk version r333509
+ * https://github.com/pear/Mail/tree/v2.0.0
  *
  *
  */
@@ -93,6 +94,7 @@ class Mail
             $mailer = new $class($params);
             return $mailer;
         } else {
+            // Z-Push change: rasiseError dependancy
             return Mail::raiseError('Unable to find class for driver ' . $driver);
         }
     }
@@ -126,10 +128,12 @@ class Mail
     public function send($recipients, $headers, $body)
     {
         if (!is_array($headers)) {
+            // Z-Push change: rasiseError dependancy
             return Mail::raiseError('$headers must be an array');
         }
 
         $result = $this->_sanitizeHeaders($headers);
+        // Z-Push change: rasiseError dependancy
         //if (is_a($result, 'PEAR_Error')) {
         if ($result === false) {
             return $result;
@@ -192,9 +196,11 @@ class Mail
 
         foreach ($headers as $key => $value) {
             if (strcasecmp($key, 'From') === 0) {
+                // Z-Push change: remove include dependancy
                 //include_once 'Mail/RFC822.php';
                 $parser = new Mail_RFC822();
                 $addresses = $parser->parseAddressList($value, 'localhost', false);
+                // Z-Push change: rasiseError dependancy
                 //if (is_a($addresses, 'PEAR_Error')) {
                 if ($addresses === false) {
                     return $addresses;
@@ -249,6 +255,7 @@ class Mail
      */
     protected function parseRecipients($recipients)
     {
+        // Z-Push change: remove include dependancy
         //include_once 'Mail/RFC822.php';
 
         // if we're passed an array, assume addresses are valid and
@@ -264,6 +271,7 @@ class Mail
         $addresses = $Mail_RFC822->parseAddressList($recipients, 'localhost', false);
 
         // If parseAddressList() returned a PEAR_Error object, just return it.
+        // Z-Push change: rasiseError dependancy
         //if (is_a($addresses, 'PEAR_Error')) {
         if ($addresses === false) {
             return $addresses;
@@ -276,7 +284,7 @@ class Mail
             }
         }
 
-        // Remove duplicated
+        // Z-Push addition: Remove duplicated
         $recipients = array_unique($recipients);
 
         return $recipients;
