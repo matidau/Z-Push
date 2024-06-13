@@ -415,6 +415,7 @@
             'flags'     => DeviceManager::FLD_FLAGS_NONE,
         ),
 */
+    );
 
 /**********************************************************************************
  *  Iconv settings
@@ -431,5 +432,3 @@
  *  https://www.php.net/manual/en/function.iconv.php
  */
     define('ICONV_OPTION', "");
-
-    );
