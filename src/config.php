@@ -416,3 +416,19 @@
         ),
 */
     );
+
+/**********************************************************************************
+ *  Iconv settings
+ *
+ *  Adds the //TRANSLIT and //IGNORE options for Iconv when converting to UTF8.
+ *
+ *  TRANSLIT attempts to transliterate characters that cannot be converted to the
+ *  target character set, while IGNORE discards them.
+ *  
+ *  These Can be combined as //TRANSLIT//IGNORE to first transliterate, and if that
+ *  fails then discard the characters. 
+ * 
+ *  These options are dependant on the iconv implementation on the system. See
+ *  https://www.php.net/manual/en/function.iconv.php
+ */
+    define('ICONV_OPTION', "");

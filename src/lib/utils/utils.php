@@ -1283,7 +1283,7 @@ class Utils {
                 try {
                     $str .= @mb_convert_encoding($val->text, "utf-8", $val->charset);
                 } catch (ValueError $exception) {
-                    $str .= @iconv($val->charset, "utf-8", $val->text);
+                    $str .= @iconv($val->charset, "utf-8" . ICONV_OPTION, $val->text);
                 }
             }
         }
