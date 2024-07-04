@@ -217,3 +217,7 @@ define('IMAP_MEETING_USE_CALDAV', false);
 
 // Specify Which Charset the IMAP Search is going to use, Default is 'UTF-8' but you could use 'US-ASCII'
 define('IMAP_SEARCH_CHARSET', 'UTF-8');
+
+// Use additional recevied mail header for remote device IP address. Example: 
+// received: from 1.2.3.123 by hostname (Z-Push); Mon, 01 Jan 2024 00:00:00 +1000
+define('IMAP_RECEIVED', false);
