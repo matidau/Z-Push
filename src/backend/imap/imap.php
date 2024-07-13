@@ -1112,6 +1112,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $message["star"] = 0;
                 }
 
+                // 'draft'
+                if (isset($overview->draft) && $overview->draft) {
+                    $message["draft"] = 1;
+                }
+                else {
+                    $message["draft"] = 0;
+                }
+
                 $messages[] = $message;
             }
         }
@@ -1362,6 +1370,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->lastverbexecuted = SYNC_MAIL_LASTVERB_UNKNOWN;
                     }
                 }
+                
+                if (Request::GetProtocolVersion() >= 16.0) {
+
+                    //set so message is fully exported
+                    if (isset($stat["draft"]) && $stat["draft"]) {
+                        $output->isdraft = true;
+                    }
+                }                
             }
 
             $Mail_RFC822 = new Mail_RFC822();
@@ -1620,6 +1636,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             $entry["star"] = 0;
+        }
+
+        // 'draft'
+        if (isset($overview[0]->draft) && $overview[0]->draft) {
+            $entry["draft"] = 1;
+        }
+        else {
+            $entry["draft"] = 0;
         }
 
         return $entry;
