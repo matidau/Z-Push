@@ -1113,7 +1113,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 // 'draft'
-                if (isset($overview->draft) && $overview->draft) {
+                $isdraftfolder = ($this->GetFolder($this->getFolderIdFromImapId($folderid))->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+                if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
                     $message["draft"] = 1;
                 }
                 else {
@@ -1639,7 +1641,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // 'draft'
-        if (isset($overview[0]->draft) && $overview[0]->draft) {
+        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+        if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
             $entry["draft"] = 1;
         }
         else {
