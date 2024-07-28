@@ -121,7 +121,7 @@ class Find extends RequestProcessor {
         }
 
         // get SearchProvider
-        $searchprovider = GSync::GetBackend()->GetSearchProvider();
+        $searchprovider = ZPush::GetBackend()->GetSearchProvider();
         $findstatus = SYNC_FINDSTATUS_SUCCESS;
 
         if (!isset($searchname)) {
