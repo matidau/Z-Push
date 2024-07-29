@@ -186,6 +186,16 @@ class DiffState implements IChanges {
                     $change["type"] = "change";
                     $changes[] = $change;
                 }
+                elseif(isset($old_item["draft"], $item["draft"]) && $old_item["draft"] != $item["draft"]) {
+                    // 'draft' changed
+                    $change["type"] = "change";
+                    $changes[] = $change;
+                }
+                elseif(!isset($old_item["draft"]) && isset($item["draft"]) && $item["draft"] === 1) {
+                    // AS16 migration 'draft' changed
+                    $change["type"] = "change";
+                    $changes[] = $change;
+                }                
                 elseif(isset($old_item['mod'], $item['mod']) && $old_item['mod'] != $item['mod']) {
                     // message modified
                     $change["type"] = "change";

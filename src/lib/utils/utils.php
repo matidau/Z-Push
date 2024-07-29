@@ -586,7 +586,7 @@ class Utils {
      * @return boolean
      */
     static public function CheckEmail($email) {
-        return strpos($email, '@') !== false ? true : false;
+        return (strpos($email, '@') !== false || $email === "undisclosed-recipients:;") ? true : false;
     }
 
     /**
