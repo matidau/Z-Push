@@ -1112,6 +1112,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $message["star"] = 0;
                 }
 
+                // 'draft'
+                $isdraftfolder = ($this->GetFolder($this->getFolderIdFromImapId($folderid))->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+                if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
+                    $message["draft"] = 1;
+                }
+                else {
+                    $message["draft"] = 0;
+                }
+
                 $messages[] = $message;
             }
         }
@@ -1362,6 +1372,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->lastverbexecuted = SYNC_MAIL_LASTVERB_UNKNOWN;
                     }
                 }
+                
+                if (Request::GetProtocolVersion() >= 16.0) {
+
+                    //set so message is fully exported
+                    if (isset($stat["draft"]) && $stat["draft"]) {
+                        $output->isdraft = true;
+                    }
+                }                
             }
 
             $Mail_RFC822 = new Mail_RFC822();
@@ -1620,6 +1638,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             $entry["star"] = 0;
+        }
+
+        // 'draft'
+        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+        if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
+            $entry["draft"] = 1;
+        }
+        else {
+            $entry["draft"] = 0;
         }
 
         return $entry;
