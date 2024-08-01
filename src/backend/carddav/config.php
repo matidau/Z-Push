@@ -93,3 +93,13 @@ define('CARDDAV_SUPPORTS_FN_SEARCH', false);
 //    Davical needs it
 //    SOGo official demo online needs it, but some SOGo installation don't need it, so test it
 define('CARDDAV_URL_VCARD_EXTENSION', '.vcf');
+
+// Filter discovered addressbook urls, by inclusion or exclusion.
+// The default is to always include the addressbook collection, unless either include or exclude is uncommented and configured.
+// The addressbook collection is included, either when the include filter is not configured, or when the include filter matches.
+// The addressbook collection is excluded, when the exclude filter is configured and it matches. Exclude always wins over include.
+// The defined constants can either be a string or an array of multiple strings, to provide multiple filters.
+// Exclude example: '*/archived-addresses/'
+// Include example: '*sync*'
+//define('CARDDAV_PATH_INCLUDE', '');
+//define('CARDDAV_PATH_EXCLUDE', '');

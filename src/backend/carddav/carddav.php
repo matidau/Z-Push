@@ -1328,8 +1328,13 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
                         continue;
                     }
                 }
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::discoverAddressbooks() Found addressbook '%s'", urldecode($response->url)));
-                $this->addressbooks[] = urldecode($response->url);
+
+                if ($this->getAddressbookIsIncluded($response->url) == true) {
+                    $this->addressbooks[] = urldecode($response->url);
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::discoverAddressbooks() Included addressbook '%s'", urldecode($response->url)));
+                } else {
+                    ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::discoverAddressbooks() Excluded addressbook '%s'", urldecode($response->url)));
+                }
             }
             unset($xml);
         }
@@ -1461,5 +1466,69 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
 
         return $addressbookId;
     }
+
+
+    /**
+     * Filter discovered addressbook urls, by inclusion or exclusion.
+     * The default is to always include the addressbook collection, unless either include or exclude is uncommented and configured.
+     * The addressbook collection is included, either when the include filter is not configured, or when the include filter matches.
+     * The addressbook collection is excluded, when the exclude filter is configured and it matches. Exclude always wins over include.
+     * The defined constants can either be a string or an array of multiple strings, to provide multiple filters.
+     */
+    private function getAddressbookIsIncluded($url) {
+        // Exist and retain original behaviour.
+        if ((defined('CARDDAV_PATH_INCLUDE') == false) && (defined('CARDDAV_PATH_EXCLUDE') == false)) {
+            return true;
+        }
+        if ($url === null) {
+            return true;
+        }
+
+        // Convert to array.
+        $includes = array();
+        if (defined('CARDDAV_PATH_INCLUDE') == true) {
+            if (is_array(CARDDAV_PATH_INCLUDE) == true) {
+                $includes = CARDDAV_PATH_INCLUDE;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Include filter is an array with %s elements", count($includes)));
+            } else if (CARDDAV_PATH_INCLUDE !== '') {
+                $includes = array(CARDDAV_PATH_INCLUDE);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Include filter is a string '%s'", CARDDAV_PATH_INCLUDE));
+            }
+        }
+
+        $excludes = array();
+        if (defined('CARDDAV_PATH_EXCLUDE') == true) {
+            if (is_array(CARDDAV_PATH_EXCLUDE) == true) {
+                $excludes = CARDDAV_PATH_EXCLUDE;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Exclude filter is an array with %s elements", count($excludes)));
+            } else if (CARDDAV_PATH_EXCLUDE !== '') {
+                $excludes = array(CARDDAV_PATH_EXCLUDE);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Exclude filter is a string '%s'", CARDDAV_PATH_EXCLUDE));
+            }
+        }
+
+        // Test for matches.
+        $foundOneInclude = (count($includes) == 0);
+        foreach ($includes as $include) {
+            if (fnmatch($include, $url) == true) {
+                $foundOneInclude = true;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Include filter '%s' matches '%s'", $include, $url));
+                break;
+            }
+        }
+
+        $foundNoExcludes = (count($excludes) == 0);
+        $foundOneExclude = false;
+        foreach ($excludes as $exclude) {
+            if (fnmatch($exclude, $url) == true) {
+                $foundOneExclude = true;
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendCardDAV::getAddressbookIsIncluded() Exclude filter '%s' matches '%s'", $exclude, $url));
+                break;
+            }
+        }
+        $foundNoExcludes = ($foundOneExclude == false);
+
+        return (($foundOneInclude == true) && ($foundNoExcludes == true));
+    } // getAddressbookIsIncluded
 
 }
