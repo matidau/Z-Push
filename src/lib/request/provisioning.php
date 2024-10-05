@@ -63,6 +63,9 @@ class Provisioning extends RequestProcessor {
             if (self::$decoder->getElementStartTag(SYNC_PROVISION_REMOTEWIPE)) {
                 $requestName = SYNC_PROVISION_REMOTEWIPE;
             }
+			if (self::$decoder->getElementStartTag(SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE)) {
+				$requestName = SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE;
+			}
             if (self::$decoder->getElementStartTag(SYNC_PROVISION_POLICIES)) {
                 $requestName = SYNC_PROVISION_POLICIES;
             }
@@ -76,6 +79,7 @@ class Provisioning extends RequestProcessor {
                 //set is available for OOF, device password and device information
             switch ($requestName) {
                 case SYNC_PROVISION_REMOTEWIPE:
+                case SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE:                    
                     if(!self::$decoder->getElementStartTag(SYNC_PROVISION_STATUS))
                         return false;
 
@@ -238,9 +242,16 @@ class Provisioning extends RequestProcessor {
 
         //wipe data if a higher RWSTATUS is requested
         if ($rwstatus > SYNC_PROVISION_RWSTATUS_OK && $policystatus === SYNC_PROVISION_POLICYSTATUS_SUCCESS) {
-            self::$encoder->startTag(SYNC_PROVISION_REMOTEWIPE, false, true);
-            self::$deviceManager->SetProvisioningWipeStatus(($rwstatusWiped)?SYNC_PROVISION_RWSTATUS_WIPED:SYNC_PROVISION_RWSTATUS_REQUESTED);
-            self::$topCollector->AnnounceInformation(sprintf("Remote wipe %s", ($rwstatusWiped)?"executed":"requested"), true);
+            if ($rwstatus <= SYNC_PROVISION_RWSTATUS_WIPED) {
+                self::$encoder->startTag(SYNC_PROVISION_REMOTEWIPE, false, true);
+                self::$deviceManager->SetProvisioningWipeStatus(($rwstatusWiped)?SYNC_PROVISION_RWSTATUS_WIPED:SYNC_PROVISION_RWSTATUS_REQUESTED);
+                self::$topCollector->AnnounceInformation(sprintf("Remote wipe %s", ($rwstatusWiped)?"executed":"requested"), true);
+            }
+            else {
+                self::$encoder->startTag(SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE, false, true);
+				self::$deviceManager->SetProvisioningWipeStatus(($rwstatusWiped) ? SYNC_PROVISION_RWSTATUS_WIPED_ACCOUNT_ONLY : SYNC_PROVISION_RWSTATUS_REQUESTED_ACCOUNT_ONLY);
+				self::$topCollector->AnnounceInformation(sprintf("Account Only Remote wipe %s", ($rwstatusWiped) ? "executed" : "requested"), true);
+            }
         }
 
         self::$encoder->endTag();//provision
