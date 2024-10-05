@@ -481,8 +481,10 @@ class ImportChangesICS implements IImportChanges {
         }
 
         // do a 'soft' delete so people can un-delete if necessary
-        if(mapi_importcontentschanges_importmessagedeletion($this->importer, 1, array(hex2bin($sk))))
+		mapi_importcontentschanges_importmessagedeletion($this->importer, 1, [hex2bin($sk)]);
+		if (mapi_last_hresult()) {
             throw new StatusException(sprintf("ImportChangesICS->ImportMessageDeletion('%s'): Error updating object: 0x%X", $sk, mapi_last_hresult()), SYNC_STATUS_OBJECTNOTFOUND);
+        }
 
         return true;
     }

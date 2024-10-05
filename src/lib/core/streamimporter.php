@@ -147,6 +147,8 @@ class ImportChangesStream implements IImportChanges {
         if ($message->flags === false || $message->flags === SYNC_NEWMESSAGE)
             $this->encoder->startTag(SYNC_ADD);
         else {
+            $this->encoder->startTag(SYNC_MODIFY);
+
             // on update of an SyncEmail we only export the flags and categories
             // draft emails are fully exported
             if($message instanceof SyncMail && (!isset($message->isdraft) || $message->isdraft === false) && ((isset($message->flag) && $message->flag instanceof SyncMailFlags) || isset($message->categories))) {
@@ -160,8 +162,6 @@ class ImportChangesStream implements IImportChanges {
                 unset($newmessage);
                 ZLog::Write(LOGLEVEL_DEBUG, sprintf("ImportChangesStream->ImportMessageChange('%s'): SyncMail message updated. Message content is striped, only flags/categories are streamed.", $id));
             }
-
-            $this->encoder->startTag(SYNC_MODIFY);
         }
 
         // TAG: SYNC_ADD / SYNC_MODIFY
