@@ -1637,6 +1637,52 @@ class MAPIProvider {
             mapi_message_modifyrecipients($mapimessage, 0, $recips);
         }
         mapi_setprops($mapimessage, $props);
+
+		// Since AS 16 we have to take care of MeetingRequest updates
+		if (Request::GetProtocolVersion() >= 16.0 && isset($appointment->meetingstatus) && $appointment->meetingstatus > 0) {
+			$mr = new Meetingrequest($this->store, $mapimessage, $this->session);
+			// initialize MR and/or update internal counters
+			$mr->updateMeetingRequest();
+			// when updating, check for significant changes and if needed will clear the existing recipient responses
+			if (!isset($appointment->clientuid)) {
+				$mr->checkSignificantChanges($oldProps, false, false);
+			}
+			$mr->sendMeetingRequest(false, false, false, false, array_values($old_receips));
+		}
+
+        if (!empty($appointment->asattachments)) {
+			foreach ($appointment->asattachments as $att) {
+				// new attachment to be saved
+				if ($att instanceof SyncBaseAttachmentAdd) {
+					SLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->setAppointment(): Saving attachment %s", $att->displayname));
+					// TODO: check: clientid (looks like an UUID), contentid, contentlocation
+					$props = [
+						PR_ATTACH_LONG_FILENAME => $att->displayname,
+						PR_DISPLAY_NAME => $att->displayname,
+						PR_ATTACH_METHOD => $att->method, // is this correct ??
+						PR_ATTACH_DATA_BIN => "",
+						PR_ATTACH_MIME_TAG => $att->contenttype,
+						PR_ATTACHMENT_HIDDEN => false,
+						PR_ATTACH_EXTENSION => pathinfo($att->displayname, PATHINFO_EXTENSION),
+					];
+					$attachment = mapi_message_createattach($mapimessage);
+					mapi_setprops($attachment, $props);
+					// Stream the file to the PR_ATTACH_DATA_BIN property
+					$stream = mapi_openproperty($attachment, PR_ATTACH_DATA_BIN, IID_IStream, 0, MAPI_CREATE | MAPI_MODIFY);
+					mapi_stream_write($stream, stream_get_contents($att->content));
+					// Commit the stream and save changes
+					mapi_stream_commit($stream);
+					mapi_savechanges($attachment);
+				}
+				// attachment to be removed
+				elseif ($att instanceof SyncBaseAttachmentDelete) {
+					list($id, $attachnum, $parentEntryid, $exceptionBasedate) = explode(":", $att->filereference);
+					SLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->setAppointment(): Deleting attachment with num: %s", $attachnum));
+					mapi_message_deleteattach($mapimessage, (int) $attachnum);
+				}
+			}
+		}
+		return true;
     }
 
     /**
