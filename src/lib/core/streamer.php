@@ -131,7 +131,7 @@ class Streamer implements Serializable {
                                 }
                                 else {
                                     // set $streamertype to null if the element is a single string (e.g. category)
-                                    $encapTagsTypes = [$map[self::STREAMER_ARRAY] => $map[self::STREAMER_TYPE]] ?? null;
+                                    $encapTagsTypes = [$map[self::STREAMER_ARRAY] => isset($map[self::STREAMER_TYPE]) ? $map[self::STREAMER_TYPE] : null];
                                 }
                                 // Identify the used tag
                                 $streamertype = false;
