@@ -491,13 +491,24 @@ class MAPIProvider {
             if(isset($change["end"]))
                 $exception->endtime = $this->getGMTTimeByTZ($change["end"], $tz);
             if(isset($change["basedate"])) {
-                $exception->exceptionstarttime = $exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
+				// pre 16.0 use exceptionstarttime
+				if (Request::GetProtocolVersion() < 16.0) {
+					$exception->exceptionstarttime = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
+				}
+				// AS 16.0+ use instanceid
+				else {
+					$exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
+				}
 
                 //open body because getting only property might not work because of memory limit
                 $exceptionatt = $recurrence->getExceptionAttachment($change["basedate"]);
                 if($exceptionatt) {
                     $exceptionobj = mapi_attach_openobj($exceptionatt, 0);
                     $this->setMessageBodyForType($exceptionobj, SYNC_BODYPREFERENCE_PLAIN, $exception);
+					if (Request::GetProtocolVersion() >= 16.0) {
+						$data = mapi_message_getprops($mapimessage, [PR_ENTRYID, PR_PARENT_SOURCE_KEY]);
+						$this->setAttachment($exceptionobj, $exception, bin2hex($data[PR_ENTRYID]), bin2hex($data[PR_PARENT_SOURCE_KEY]), bin2hex($change["basedate"]));
+					}                    
                 }
             }
             if(isset($change["subject"]))
@@ -2940,6 +2951,109 @@ class MAPIProvider {
             $props[$appointmentprops["body"]] = "";
         }
     }
+
+	/**
+	 * Sets attachments from an email message to a SyncObject.
+	 *
+	 * @param mixed			$mapimessage
+	 * @param SyncObject	$message
+	 * @param string		$entryid
+	 * @param string		$parentSourcekey
+	 */
+    private function setAttachment($mapimessage, &$message, $entryid, $parentSourcekey, $exceptionBasedate = 0) {
+		// Add attachments
+		$attachtable = mapi_message_getattachmenttable($mapimessage);
+		$rows = mapi_table_queryallrows($attachtable, [PR_ATTACH_NUM]);
+
+		foreach ($rows as $row) {
+			if (isset($row[PR_ATTACH_NUM])) {
+				if (Request::GetProtocolVersion() >= 12.0) {
+					$attach = new SyncBaseAttachment();
+				}
+				else {
+					$attach = new SyncAttachment();
+				}
+
+				$mapiattach = mapi_message_openattach($mapimessage, $row[PR_ATTACH_NUM]);
+				$attachprops = mapi_getprops($mapiattach, [PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_ATTACH_CONTENT_ID, PR_ATTACH_CONTENT_ID_A, PR_ATTACH_MIME_TAG, PR_ATTACH_METHOD, PR_DISPLAY_NAME, PR_ATTACH_SIZE, PR_ATTACH_FLAGS]);
+				if (isset($attachprops[PR_ATTACH_MIME_TAG]) && strpos(strtolower($attachprops[PR_ATTACH_MIME_TAG]), 'signed') !== false) {
+					continue;
+				}
+
+				// the displayname is handled equally for all AS versions
+				$attach->displayname = w2u((isset($attachprops[PR_ATTACH_LONG_FILENAME])) ? $attachprops[PR_ATTACH_LONG_FILENAME] : ((isset($attachprops[PR_ATTACH_FILENAME])) ? $attachprops[PR_ATTACH_FILENAME] : ((isset($attachprops[PR_DISPLAY_NAME])) ? $attachprops[PR_DISPLAY_NAME] : "attachment.bin")));
+				// fix attachment name in case of inline images
+				if (($attach->displayname == "inline.txt" && isset($attachprops[PR_ATTACH_MIME_TAG])) ||
+						(substr_compare($attach->displayname, "attachment", 0, 10, true) === 0 && substr_compare($attach->displayname, ".dat", -4, 4, true) === 0)) {
+					$mimetype = $attachprops[PR_ATTACH_MIME_TAG] ?? 'application/octet-stream';
+					$mime = explode("/", $mimetype);
+
+					if (count($mime) == 2 && $mime[0] == "image") {
+						$attach->displayname = "inline." . $mime[1];
+					}
+				}
+
+				// set AS version specific parameters
+				if (Request::GetProtocolVersion() >= 12.0) {
+					$attach->filereference = sprintf("%s:%s:%s:%s", $entryid, $row[PR_ATTACH_NUM], $parentSourcekey, $exceptionBasedate);
+					$attach->method = (isset($attachprops[PR_ATTACH_METHOD])) ? $attachprops[PR_ATTACH_METHOD] : ATTACH_BY_VALUE;
+
+					// if displayname does not have the eml extension for embedde messages, android and WP devices won't open it
+					if ($attach->method == ATTACH_EMBEDDED_MSG) {
+						if (strtolower(substr($attach->displayname, -4)) != '.eml') {
+							$attach->displayname .= '.eml';
+						}
+					}
+					// android devices require attachment size in order to display an attachment properly
+					if (!isset($attachprops[PR_ATTACH_SIZE])) {
+						$stream = mapi_openproperty($mapiattach, PR_ATTACH_DATA_BIN, IID_IStream, 0, 0);
+						// It's not possible to open some (embedded only?) messages, so we need to open the attachment object itself to get the data
+						if (mapi_last_hresult()) {
+							$embMessage = mapi_attach_openobj($mapiattach);
+							$addrbook = $this->getAddressbook();
+							$stream = mapi_inetmapi_imtoinet($this->session, $addrbook, $embMessage, ['use_tnef' => -1]);
+						}
+						$stat = mapi_stream_stat($stream);
+						$attach->estimatedDataSize = $stat['cb'];
+					}
+					else {
+						$attach->estimatedDataSize = $attachprops[PR_ATTACH_SIZE];
+					}
+
+					if (isset($attachprops[PR_ATTACH_CONTENT_ID]) && $attachprops[PR_ATTACH_CONTENT_ID]) {
+						$attach->contentid = $attachprops[PR_ATTACH_CONTENT_ID];
+					}
+
+					if (!isset($attach->contentid) && isset($attachprops[PR_ATTACH_CONTENT_ID_A]) && $attachprops[PR_ATTACH_CONTENT_ID_A]) {
+						$attach->contentid = $attachprops[PR_ATTACH_CONTENT_ID_A];
+					}
+
+					if (isset($attachprops[PR_ATTACHMENT_HIDDEN]) && $attachprops[PR_ATTACHMENT_HIDDEN]) {
+						$attach->isinline = 1;
+					}
+
+					if (isset($attach->contentid, $attachprops[PR_ATTACH_FLAGS]) && $attachprops[PR_ATTACH_FLAGS] & 4) {
+						$attach->isinline = 1;
+					}
+
+					if (!isset($message->asattachments)) {
+						$message->asattachments = [];
+					}
+
+					array_push($message->asattachments, $attach);
+				}
+				else {
+					$attach->attsize = $attachprops[PR_ATTACH_SIZE];
+					$attach->attname = sprintf("%s:%s:%s", $entryid, $row[PR_ATTACH_NUM], $parentSourcekey);
+					if (!isset($message->attachments)) {
+						$message->attachments = [];
+					}
+
+					array_push($message->attachments, $attach);
+				}
+			}
+		}
+	}
 
     /**
      * Get MAPI addressbook object.

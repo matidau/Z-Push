@@ -30,6 +30,7 @@
 class SyncAppointmentException extends SyncAppointment {
     public $deleted;
     public $exceptionstarttime;
+    public $instanceid;
 
     function __construct() {
         parent::__construct();

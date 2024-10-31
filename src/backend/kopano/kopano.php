@@ -805,7 +805,7 @@ class BackendKopano implements IBackend, ISearchProvider {
         if(!strpos($attname, ":"))
             throw new StatusException(sprintf("KopanoBackend->GetAttachmentData('%s'): Error, attachment requested for non-existing item", $attname), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
 
-        list($id, $attachnum, $parentEntryid) = explode(":", $attname);
+        list($id, $attachnum, $parentEntryid, $exceptionBasedate) = explode(":", $attname);
         if (isset($parentEntryid)) {
             $this->Setup(ZPush::GetAdditionalSyncFolderStore($parentEntryid));
         }
@@ -819,6 +819,14 @@ class BackendKopano implements IBackend, ISearchProvider {
         $attach = mapi_message_openattach($message, $attachnum);
         if(!$attach)
             throw new StatusException(sprintf("KopanoBackend->GetAttachmentData('%s'): Error, unable to open attachment number '%s' with: 0x%X", $attname, $attachnum, mapi_last_hresult()), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+
+		// attachment of a recurring appointment execption
+		if(strlen($exceptionBasedate) > 1) {
+			$recurrence = new Recurrence($this->store, $message);
+			$exceptionatt = $recurrence->getExceptionAttachment(hex2bin($exceptionBasedate));
+			$exceptionobj = mapi_attach_openobj($exceptionatt, 0);
+			$attach = mapi_message_openattach($exceptionobj, $attachnum);
+		}
 
         // get necessary attachment props
         $attprops = mapi_getprops($attach, array(PR_ATTACH_MIME_TAG, PR_ATTACH_MIME_TAG_W, PR_ATTACH_METHOD));
