@@ -1537,7 +1537,7 @@ class BackendKopano implements IBackend, ISearchProvider {
         }
 
         $storeProps = mapi_getprops($this->store, array(PR_STORE_SUPPORT_MASK, PR_FINDER_ENTRYID));
-        if (($storeProps[PR_STORE_SUPPORT_MASK] & STORE_SEARCH_OK) != STORE_SEARCH_OK) {
+        if (isset($storeProps[PR_STORE_SUPPORT_MASK]) && (($storeProps[PR_STORE_SUPPORT_MASK] & STORE_SEARCH_OK) != STORE_SEARCH_OK)) {
             ZLog::Write(LOGLEVEL_WARN, "Store doesn't support search folders. Public store doesn't have FINDER_ROOT folder");
             return false;
         }
