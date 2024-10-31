@@ -1498,6 +1498,31 @@ class Utils {
         return datefmt_format($dateFormatUtc, $ts);
     }
 
+    /**
+     * Transforms an AS timestamp into a unix timestamp
+     *
+     * @param string    $ts
+     *
+     * @access private
+     * @return long
+     */
+    function parseDate($ts) {
+        if(preg_match("/(\d{4})[^0-9]*(\d{2})[^0-9]*(\d{2})(T(\d{2})[^0-9]*(\d{2})[^0-9]*(\d{2})(.\d+)?Z){0,1}$/", $ts, $matches)) {
+            if ($matches[1] >= 2038){
+                $matches[1] = 2038;
+                $matches[2] = 1;
+                $matches[3] = 18;
+                $matches[5] = $matches[6] = $matches[7] = 0;
+            }
+
+            if (!isset($matches[5])) $matches[5] = 0;
+            if (!isset($matches[6])) $matches[6] = 0;
+            if (!isset($matches[7])) $matches[7] = 0;
+
+            return gmmktime($matches[5], $matches[6], $matches[7], $matches[2], $matches[3], $matches[1]);
+        }
+        return 0;
+    }
 }
 
 // TODO Win1252/UTF8 functions are deprecated and will be removed sometime
