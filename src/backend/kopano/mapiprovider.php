@@ -154,7 +154,7 @@ class MAPIProvider {
             !$messageprops[$taskproperties["deadoccur"]]))) {
             // Process recurrence
             $message->recurrence = new SyncTaskRecurrence();
-            $this->getRecurrence($mapimessage, $messageprops, $message, $message->recurrence, false);
+            $this->getRecurrence($mapimessage, $messageprops, $message, $message->recurrence, false, $taskproperties);
         }
 
         // when set the task to complete using the WebAccess, the dateComplete property is not set correctly
@@ -234,7 +234,7 @@ class MAPIProvider {
         if(isset($messageprops[$appointmentprops["isrecurring"]]) && $messageprops[$appointmentprops["isrecurring"]]) {
             // Process recurrence
             $message->recurrence = new SyncRecurrence();
-            $this->getRecurrence($mapimessage, $messageprops, $message, $message->recurrence, $tz);
+            $this->getRecurrence($mapimessage, $messageprops, $message, $message->recurrence, $tz, $appointmentprops);
 
             // outlook seems to honour the timezone information contrary to other clients
             if (empty($message->alldayevent) || Request::IsOutlook()) {
@@ -379,9 +379,13 @@ class MAPIProvider {
 
 		// Add attachments to message for AS 16.0 and higher
 		if (Request::GetProtocolVersion() >= 16.0) {
+            // add attachments
 			$entryid = bin2hex($messageprops[$appointmentprops["entryid"]]);
 			$parentSourcekey = bin2hex($messageprops[$appointmentprops["parentsourcekey"]]);
 			$this->setAttachment($mapimessage, $message, $entryid, $parentSourcekey);
+			// add location
+			$message->location2 = new SyncLocation();
+			$this->getASlocation($mapimessage, $message->location2, $appointmentprops);
 		}
         return $message;
     }
@@ -394,11 +398,12 @@ class MAPIProvider {
      * @param SyncObject        &$syncMessage       the message
      * @param SyncObject        &$syncRecurrence    the  recurrence message
      * @param array             $tz                 timezone information
+     * @param array             $appointmentprops   property defintions
      *
      * @access private
      * @return
      */
-    private function getRecurrence($mapimessage, $recurprops, &$syncMessage, &$syncRecurrence, $tz) {
+    private function getRecurrence($mapimessage, $recurprops, &$syncMessage, &$syncRecurrence, $tz, $appointmentprops) {
         if ($syncRecurrence instanceof SyncTaskRecurrence)
             $recurrence = new TaskRecurrence($this->store, $mapimessage);
         else
@@ -512,8 +517,12 @@ class MAPIProvider {
                     $exceptionobj = mapi_attach_openobj($exceptionatt, 0);
                     $this->setMessageBodyForType($exceptionobj, SYNC_BODYPREFERENCE_PLAIN, $exception);
 					if (Request::GetProtocolVersion() >= 16.0) {
-						$data = mapi_message_getprops($mapimessage, [PR_ENTRYID, PR_PARENT_SOURCE_KEY]);
+						// add attachment
+                        $data = mapi_message_getprops($mapimessage, [PR_ENTRYID, PR_PARENT_SOURCE_KEY]);
 						$this->setAttachment($exceptionobj, $exception, bin2hex($data[PR_ENTRYID]), bin2hex($data[PR_PARENT_SOURCE_KEY]), bin2hex($change["basedate"]));
+                        // add location
+                        $exception->location2 = new SyncLocation();
+                        $this->getASlocation($exceptionobj, $exception->location2, $appointmentprops);
 					}                    
                 }
             }
@@ -691,7 +700,7 @@ class MAPIProvider {
             if(isset($props[$meetingrequestproperties["isrecurringtag"]]) && $props[$meetingrequestproperties["isrecurringtag"]]) {
                 $myrec = new SyncMeetingRequestRecurrence();
                 // get recurrence -> put $message->meetingrequest as message so the 'alldayevent' is set correctly
-                $this->getRecurrence($mapimessage, $props, $message->meetingrequest, $myrec, $tz);
+                $this->getRecurrence($mapimessage, $props, $message->meetingrequest, $myrec, $tz, $meetingrequestproperties);
                 $message->meetingrequest->recurrences = array($myrec);
             }
 
@@ -1336,6 +1345,9 @@ class MAPIProvider {
                 if (isset($appointment->asbody)) {
                     $this->setASbody($appointment->asbody, $exceptionprops, $appointmentprops);
                 }
+				if (isset($appointment->location2)) {
+					$this->setASlocation($appointment->location2, $exceptionprops, $appointmentprops);
+				}
                 // modify if exists else create exception
                 if ($recurrence->isException($basedate)) {
                     $recurrence->modifyException($exceptionprops, $basedate);
@@ -1444,6 +1456,9 @@ class MAPIProvider {
             $this->setASbody($appointment->asbody, $props, $appointmentprops);
         }
 
+		if (isset($appointment->location2)) {
+			$this->setASlocation($appointment->location2, $props, $appointmentprops);
+		}
         if ($tz !== false) {
             $props[$appointmentprops["timezonetag"]] = $this->getMAPIBlobFromTZ($tz);
         }
@@ -3130,6 +3145,110 @@ class MAPIProvider {
 				list($id, $attachnum, $parentEntryid, $exceptionBasedate) = explode(":", $att->filereference);
 				SLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->editAttachments(): Deleting attachment with num: %s", $attachnum));
 				mapi_message_deleteattach($mapimessage, (int) $attachnum);
+			}
+		}
+	}
+
+	/**
+	 * Sets information from SyncLocation type for a MAPI message.
+	 *
+	 * @param SyncBaseBody	$aslocation
+	 * @param array			$props
+	 * @param array			$appointmentprops
+	 */
+	private function setASlocation($aslocation, &$props, $appointmentprops) {
+		$fullAddress = "";
+		if ($aslocation->street || $aslocation->city || $aslocation->state || $aslocation->country || $aslocation->postalcode) {
+			$fullAddress = $aslocation->street .", ". $aslocation->city ."-". $aslocation->state .",". $aslocation->country .",". $aslocation->postalcode;
+		}
+		// Determine which data to use as DisplayName. This is also set to the traditional location property for backwards compatibility (this is currently displayed in OL).
+		$useStreet = false;
+		if ($aslocation->displayname) {
+			$props[$appointmentprops["location"]] = $aslocation->displayname;
+		}
+		elseif($aslocation->street) {
+			$useStreet = true;
+			$props[$appointmentprops["location"]] = $fullAddress;
+		}
+		elseif($aslocation->city) {
+			$props[$appointmentprops["location"]] = $aslocation->city;
+		}
+		$loc = [];
+		$loc["DisplayName"] = ($useStreet) ? $aslocation->street : $props[$appointmentprops["location"]];
+		$loc["LocationAnnotation"] = ($aslocation->annotation) ? $aslocation->annotation : "";
+		$loc["LocationSource"] = "None";
+		$loc["Unresolved"] = ($aslocation->locationuri) ? false : true;
+		$loc["LocationUri"] = ($aslocation->locationuri) ?? "";
+		$loc["Latitude"] = ($aslocation->latitude) ? floatval($aslocation->latitude) : null;
+		$loc["Longitude"] = ($aslocation->longitude) ? floatval($aslocation->longitude) : null;
+		$loc["Altitude"] = ($aslocation->altitude) ?? null;
+		$loc["Accuracy"] = ($aslocation->accuracy) ?? null;
+		$loc["AltitudeAccuracy"] = ($aslocation->altitudeaccuracy) ?? null;
+		$loc["LocationStreet"] = ($aslocation->street) ?? "";
+		$loc["LocationCity"] = ($aslocation->city) ?? "";
+		$loc["LocationState"] = ($aslocation->state) ?? "";
+		$loc["LocationCountry"] = ($aslocation->country) ?? "";
+		$loc["LocationPostalCode"] = ($aslocation->postalcode) ?? "";
+		$loc["LocationFullAddress"] = $fullAddress;
+		$props[$appointmentprops["locations"]] = json_encode([$loc], JSON_UNESCAPED_UNICODE);
+	}
+    
+	/**
+	 * Gets information from a MAPI message and applies it to a SyncLocation object.
+	 *
+	 * @param MAPIMessage		$mapimessage
+	 * @param SyncObject		$aslocation
+	 * @param array				$appointmentprops
+	 */
+	private function getASlocation($mapimessage, &$aslocation, $appointmentprops) {
+		$props = mapi_getprops($mapimessage, [ $appointmentprops["locations"],  $appointmentprops["location"] ]);
+		// set the old location as displayname - this is also the "correct" approach if there is more than one location in the "locations" property json
+		if (isset($props[$appointmentprops["location"]])) {
+			$aslocation->displayname = $props[$appointmentprops["location"]];
+		}
+		if (isset($props[$appointmentprops["locations"]])) {
+			$loc = json_decode($props[$appointmentprops["locations"]], true);
+			if (is_array($loc) && count($loc) == 1) {
+				$l = $loc[0];
+				if (!empty($l['DisplayName'])) {
+					$aslocation->displayname = $l['DisplayName'];
+				}
+				if (!empty($l['LocationAnnotation'])) {
+					$aslocation->annotation = $l['LocationAnnotation'];
+				}
+				if (!empty($l['LocationStreet'])) {
+					$aslocation->street = $l['LocationStreet'];
+				}
+				if (!empty($l['LocationCity'])) {
+					$aslocation->city = $l['LocationCity'];
+				}
+				if (!empty($l['LocationState'])) {
+					$aslocation->state = $l['LocationState'];
+				}
+				if (!empty($l['LocationCountry'])) {
+					$aslocation->country = $l['LocationCountry'];
+				}
+				if (!empty($l['LocationPostalCode'])) {
+					$aslocation->postalcode = $l['LocationPostalCode'];
+				}
+				if (isset($l['Latitude']) && is_numeric($l['Latitude'])) {
+					$aslocation->latitude = floatval($l['Latitude']);
+				}
+				if (isset($l['Longitude']) && is_numeric($l['Longitude'])) {
+					$aslocation->longitude = floatval($l['Longitude']);
+				}
+				if (isset($l['Accuracy']) && is_numeric($l['Accuracy'])) {
+					$aslocation->accuracy = $l['Accuracy'];
+				}
+				if (isset($l['Altitude']) && is_numeric($l['Altitude'])) {
+					$aslocation->altitude = $l['Altitude'];
+				}
+				if (isset($l['AltitudeAccuracy']) && is_numeric($l['AltitudeAccuracy'])) {
+					$aslocation->altitudeaccuracy = $l['AltitudeAccuracy'];
+				}
+				if (!empty($l['LocationUri'])) {
+					$aslocation->locationuri = $l['LocationUri'];
+				}
 			}
 		}
 	}

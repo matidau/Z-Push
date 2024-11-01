@@ -159,6 +159,7 @@ class ComposerStaticInit153a56a781a72686b71399955d98204f
         'SyncFindProperties' => __DIR__ . '/../..' . '/lib/syncobjects/syncfindproperties.php',
         'SyncFolder' => __DIR__ . '/../..' . '/lib/syncobjects/syncfolder.php',
         'SyncItemOperationsAttachment' => __DIR__ . '/../..' . '/lib/syncobjects/syncitemoperationsattachment.php',
+        'SyncLocation' => __DIR__ . '/../..' . '/lib/syncobjects/synclocation.php',
         'SyncMail' => __DIR__ . '/../..' . '/lib/syncobjects/syncmail.php',
         'SyncMailFlags' => __DIR__ . '/../..' . '/lib/syncobjects/syncmailflags.php',
         'SyncMailResponse' => __DIR__ . '/../..' . '/lib/syncobjects/syncmail.php',
