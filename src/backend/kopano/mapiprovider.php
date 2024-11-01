@@ -1311,10 +1311,14 @@ class MAPIProvider {
             $instanceid = $appointment->parseDate($appointment->instanceid);
             $basedate = $this->getDayStartOfTimestamp($instanceid);
             // get compatible TZ data
-            $props = [ $appointmentprops["timezonetag"] ];
+            $props = [ $appointmentprops["timezonetag"], $appointmentprops["isrecurring"] ];
             $tzprop = $this->getProps($mapimessage, $props);
             $tz = $this->getTZFromMAPIBlob($tzprop[$appointmentprops["timezonetag"]]);
             
+            if ($appointmentprops["isrecurring"] == false) {
+                SLog::Write(LOGLEVEL_INFO, sprintf("MAPIProvider->setAppointment(): Cannot modify exception instanceId '%s' as target appointment is not recurring. Ignoring.", $appointment->instanceid));
+                return false;
+            }
             // get a recurrence object
             $recurrence = new Recurrence($this->store, $mapimessage);
             // check if the exception is to be deleted
@@ -1419,7 +1423,10 @@ class MAPIProvider {
 
         // is the transmitted UID OL compatible?
         // if not, encapsulate the transmitted uid
-        $appointment->uid = Utils::GetOLUidFromICalUid($appointment->uid);
+        if ($appointment->uid && substr($appointment->uid, 0, 16) != "040000008200E000") {
+            // if not, encapsulate the transmitted uid
+            $appointment->uid = Utils::GetOLUidFromICalUid($appointment->uid);
+        }
 
         // if there was a clientuid transport the new UID to the response
 		if ($appointment->clientuid) {
@@ -1575,6 +1582,8 @@ class MAPIProvider {
         }
         else {
             $props[$appointmentprops["isrecurring"]] = false;
+            // remove recurringstate 
+            mapi_deleteprops($mapimessage, [$appointmentprops["recurringstate"]]);
         }
 
         //always set the PR_SENT_REPRESENTING_* props so that the attendee status update also works with the webaccess
