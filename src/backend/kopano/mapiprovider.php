@@ -1257,6 +1257,13 @@ class MAPIProvider {
             if (isset($message->asbody->type) && $message->asbody->type == SYNC_BODYPREFERENCE_HTML && isset($message->asbody->data)) {
                 $props[$emailprops["html"]] = stream_get_contents($message->asbody->data);
             }
+			// remove PR_CLIENT_SUBMIT_TIME 
+			mapi_deleteprops(
+				$mapimessage,
+				[
+					$emailprops["clientsubmittime"],
+				]
+			);
         }
 
 		// save DRAFTs attachments
