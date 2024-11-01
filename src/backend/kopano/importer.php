@@ -449,7 +449,7 @@ class ImportChangesICS implements IImportChanges {
             $sourcekeyprops = mapi_getprops($mapimessage, array (PR_SOURCE_KEY));
 
             $response->serverid = $this->prefix . bin2hex($sourcekeyprops[PR_SOURCE_KEY]);
-            
+
 			return $response;
         }
         else
@@ -481,6 +481,14 @@ class ImportChangesICS implements IImportChanges {
             ZLog::Write(LOGLEVEL_INFO, sprintf("ImportChangesICS->ImportMessageDeletion('%s'): Conflict detected. Data is already deleted. Request will be ignored.", $id));
             return true;
         }
+
+		// check if we need to do actions before deleting this message (e.g. send meeting cancellations to attendees)
+		$entryid = mapi_msgstore_entryidfromsourcekey($this->store, $this->folderid, hex2bin($sk));
+		if ($entryid) {
+			// open the source message
+			$mapimessage = mapi_msgstore_openentry($this->store, $entryid);
+			$this->mapiprovider->PreDeleteMessage($mapimessage);
+		}
 
         // do a 'soft' delete so people can un-delete if necessary
 		mapi_importcontentschanges_importmessagedeletion($this->importer, 1, [hex2bin($sk)]);

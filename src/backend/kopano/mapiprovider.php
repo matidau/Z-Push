@@ -1410,9 +1410,17 @@ class MAPIProvider {
                     $recurrence->createException($exceptionprops, $basedate);
                 }
             }
+			// instantiate the MR so we can send a updates to the attendees
+			$mr = new Meetingrequest($this->store, $mapimessage, $this->session);
+			$mr->updateMeetingRequest($basedate);
+			$deleteException = isset($appointment->instanceiddelete) && $appointment->instanceiddelete === true;
+			$mr->sendMeetingRequest($deleteException, false, $basedate);
             return true;
         }
             
+		// Save OldProps to later check which data is being changed
+		$oldProps = $this->getProps($mapimessage, $appointmentprops);
+
         // start and end time may not be set - try to get them from the existing appointment for further calculation - see https://jira.z-hub.io/browse/ZP-983
         if (!isset($appointment->starttime) || !isset($appointment->endtime)) {
             $amapping = MAPIMapping::GetAppointmentMapping();
@@ -1649,7 +1657,38 @@ class MAPIProvider {
             }
         }
 
-        // Do attendees
+ 		// For AS-16 get a list of the current attendees (pre update)
+         if(Request::GetProtocolVersion() >= 16.0 && isset($appointment->meetingstatus) && $appointment->meetingstatus > 0) {
+			$old_recipienttable = mapi_message_getrecipienttable($mapimessage);
+			$old_receipstable = mapi_table_queryallrows($old_recipienttable,
+				[
+					PR_ENTRYID,
+					PR_DISPLAY_NAME,
+					PR_EMAIL_ADDRESS,
+					PR_RECIPIENT_ENTRYID,
+					PR_RECIPIENT_TYPE,
+					PR_SEND_INTERNET_ENCODING,
+					PR_SEND_RICH_INFO,
+					PR_RECIPIENT_DISPLAY_NAME,
+					PR_ADDRTYPE,
+					PR_DISPLAY_TYPE,
+					PR_DISPLAY_TYPE_EX,
+					PR_RECIPIENT_TRACKSTATUS,
+					PR_RECIPIENT_TRACKSTATUS_TIME,
+					PR_RECIPIENT_FLAGS,
+					PR_ROWID,
+					PR_OBJECT_TYPE,
+					PR_SEARCH_KEY,
+				]);
+			$old_receips = [];
+			foreach($old_receipstable as $oldrec) {
+				if (isset($oldrec[PR_EMAIL_ADDRESS])) {
+					$old_receips[$oldrec[PR_EMAIL_ADDRESS]] = $oldrec;
+				}
+			}
+		}
+		
+       // Do attendees
         if(isset($appointment->attendees) && is_array($appointment->attendees)) {
             $recips = array();
 
@@ -1664,6 +1703,11 @@ class MAPIProvider {
             $org[PR_RECIPIENT_TYPE] = MAPI_ORIG;
 
             array_push($recips, $org);
+
+			// remove organizer from old_receips
+			if(isset($old_receips[$org[PR_EMAIL_ADDRESS]])) {
+				unset($old_receips[$org[PR_EMAIL_ADDRESS]]);
+			}
 
             //open addresss book for user resolve
             $addrbook = $this->getAddressbook();
@@ -1693,10 +1737,14 @@ class MAPIProvider {
                     $recip[PR_ENTRYID] = mapi_createoneoff($recip[PR_DISPLAY_NAME], $recip[PR_ADDRTYPE], $recip[PR_EMAIL_ADDRESS]);
                 }
 
+				// remove still existing attendees from the list of pre-update attendees - remaining pre-update are considered deleted attendees
+				if(isset($old_receips[$recip[PR_EMAIL_ADDRESS]])) {
+					unset($old_receips[$recip[PR_EMAIL_ADDRESS]]);
+				}
                 array_push($recips, $recip);
             }
 
-            mapi_message_modifyrecipients($mapimessage, 0, $recips);
+            mapi_message_modifyrecipients($mapimessage, ($appointment->clientuid) ? MODRECIP_ADD : MODRECIP_MODIFY, $recips);
         }
         mapi_setprops($mapimessage, $props);
 
