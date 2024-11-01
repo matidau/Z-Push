@@ -440,7 +440,7 @@ class ImportChangesICS implements IImportChanges {
             $flags = SYNC_NEW_MESSAGE;
 
         if(mapi_importcontentschanges_importmessagechange($this->importer, $props, $flags, $mapimessage)) {
-            $this->mapiprovider->SetMessage($mapimessage, $message);
+            $response = $this->mapiprovider->SetMessage($mapimessage, $message);
             mapi_savechanges($mapimessage);
 
             if (mapi_last_hresult())
@@ -448,7 +448,9 @@ class ImportChangesICS implements IImportChanges {
 
             $sourcekeyprops = mapi_getprops($mapimessage, array (PR_SOURCE_KEY));
 
-            return $this->prefix . bin2hex($sourcekeyprops[PR_SOURCE_KEY]);
+            $response->serverid = $this->prefix . bin2hex($sourcekeyprops[PR_SOURCE_KEY]);
+            
+			return $response;
         }
         else
             throw new StatusException(sprintf("ImportChangesICS->ImportMessageChange('%s','%s'): Error updating object: 0x%X", $id, get_class($message), mapi_last_hresult()), SYNC_STATUS_OBJECTNOTFOUND);
