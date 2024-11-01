@@ -502,14 +502,8 @@ class MAPIProvider {
             if(isset($change["end"]))
                 $exception->endtime = $this->getGMTTimeByTZ($change["end"], $tz);
             if(isset($change["basedate"])) {
-				// pre 16.0 use exceptionstarttime
-				if (Request::GetProtocolVersion() < 16.0) {
-					$exception->exceptionstarttime = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
-				}
-				// AS 16.0+ use instanceid
-				else {
-					$exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
-				}
+                // depending on the AS version the streamer is going to send the correct value
+                $exception->exceptionstarttime = $exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($change["basedate"]) + $recurrence->recur["startocc"] * 60, $tz);
 
                 //open body because getting only property might not work because of memory limit
                 $exceptionatt = $recurrence->getExceptionAttachment($change["basedate"]);
@@ -572,7 +566,7 @@ class MAPIProvider {
             $exception = new SyncAppointmentException();
 
             // depending on the AS version the streamer is going to send the correct value
-			$exception->exceptionstarttime = $exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($deleted) + $recurrence->recur["startocc"] * 60, $tz);
+            $exception->exceptionstarttime = $exception->instanceid = $this->getGMTTimeByTZ($this->getDayStartOfTimestamp($deleted) + $recurrence->recur["startocc"] * 60, $tz);
             $exception->deleted = "1";
 
             if(!isset($syncMessage->exceptions))
@@ -3192,7 +3186,7 @@ class MAPIProvider {
 		$loc["LocationFullAddress"] = $fullAddress;
 		$props[$appointmentprops["locations"]] = json_encode([$loc], JSON_UNESCAPED_UNICODE);
 	}
-    
+
 	/**
 	 * Gets information from a MAPI message and applies it to a SyncLocation object.
 	 *
