@@ -508,10 +508,11 @@ class ImportChangesICS implements IImportChanges {
      * @param array         $categories
      *
      * @access public
-     * @return boolean
+     * @return SyncObject
      * @throws StatusException
      */
     public function ImportMessageReadFlag($id, $flags, $categories = array()) {
+        $response = new SyncMailResponse();
         list($fsk,$sk) = Utils::SplitMessageId($id);
 
         // if $fsk is set, we convert it into a backend id.
@@ -557,7 +558,7 @@ class ImportChangesICS implements IImportChanges {
             $p = mapi_message_setreadflag($realMessage, $flag);
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("ImportChangesICS->ImportMessageReadFlag('%s','%d'): setting readflag on message: 0x%X", $id, $flags, mapi_last_hresult()));
         }
-        return true;
+        return $response;
     }
 
     /**
