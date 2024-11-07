@@ -1114,7 +1114,7 @@ class MAPIProvider {
 		$messageClass = isset($props[PR_MESSAGE_CLASS]) ? $props[PR_MESSAGE_CLASS] : false;
 
 		if ($messageClass !== false && stripos($messageClass, 'ipm.appointment') === 0) {
-			SLog::Write(LOGLEVEL_DEBUG, "MAPIProvider->PreDeleteMessage(): Appointment message");
+			ZLog::Write(LOGLEVEL_DEBUG, "MAPIProvider->PreDeleteMessage(): Appointment message");
 			$mr = new Meetingrequest($this->store, $mapimessage, $this->session);
 			$mr->doCancelInvitation();
 		}
@@ -1316,7 +1316,7 @@ class MAPIProvider {
             $tz = $this->getTZFromMAPIBlob($tzprop[$appointmentprops["timezonetag"]]);
             
             if ($appointmentprops["isrecurring"] == false) {
-                SLog::Write(LOGLEVEL_INFO, sprintf("MAPIProvider->setAppointment(): Cannot modify exception instanceId '%s' as target appointment is not recurring. Ignoring.", $appointment->instanceid));
+                ZLog::Write(LOGLEVEL_INFO, sprintf("MAPIProvider->setAppointment(): Cannot modify exception instanceId '%s' as target appointment is not recurring. Ignoring.", $appointment->instanceid));
                 return false;
             }
             // get a recurrence object
@@ -3128,7 +3128,7 @@ class MAPIProvider {
                     continue;
                 }
 
-				SLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->editAttachments(): Saving attachment %s with name: %s", $att->clientid, $att->displayname));
+				ZLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->editAttachments(): Saving attachment %s with name: %s", $att->clientid, $att->displayname));
 				// only create if the attachment does not already exist
 				if ($this->getFileReferenceForClientId($mapimessage, $att->clientid, 0, 0) === false) {
 					// TODO: check: contentlocation
@@ -3170,7 +3170,7 @@ class MAPIProvider {
 			// attachment to be removed
 			elseif ($att instanceof SyncBaseAttachmentDelete) {
 				list($id, $attachnum, $parentEntryid, $exceptionBasedate) = explode(":", $att->filereference);
-				SLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->editAttachments(): Deleting attachment with num: %s", $attachnum));
+				ZLog::Write(LOGLEVEL_DEBUG, sprintf("MAPIProvider->editAttachments(): Deleting attachment with num: %s", $attachnum));
 				mapi_message_deleteattach($mapimessage, (int) $attachnum);
 			}
 		}
