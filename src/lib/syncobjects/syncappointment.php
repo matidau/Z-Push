@@ -67,10 +67,10 @@ class SyncAppointment extends SyncObject {
     public $onlineMeetingExternalLink;
 
     // AS 16.0 props
-	public $asattachments;
-	public $clientuid;
-	public $instanceid;
-	public $instanceiddelete;
+    public $asattachments;
+    public $clientuid;
+    public $instanceid;
+    public $instanceiddelete;
 
     function __construct() {
         $mapping = array(
@@ -229,37 +229,37 @@ class SyncAppointment extends SyncObject {
         }
 
         if (Request::GetProtocolVersion() >= 16.0) {
-			$mapping[SYNC_AIRSYNCBASE_ATTACHMENTS] = [
-				self::STREAMER_VAR => "asattachments",
-				// Different tags can be used to encapsulate the SyncBaseAttachmentSubtypes depending on its usecase
-				self::STREAMER_ARRAY => [
-					SYNC_AIRSYNCBASE_ATTACHMENT => "SyncBaseAttachment",
-					SYNC_AIRSYNCBASE_ADD => "SyncBaseAttachmentAdd",
-					SYNC_AIRSYNCBASE_DELETE => "SyncBaseAttachmentDelete",
-				],
-			];
-			$mapping[SYNC_AIRSYNCBASE_LOCATION] = [
+            $mapping[SYNC_AIRSYNCBASE_ATTACHMENTS] = [
+                self::STREAMER_VAR => "asattachments",
+                // Different tags can be used to encapsulate the SyncBaseAttachmentSubtypes depending on its usecase
+                self::STREAMER_ARRAY => [
+                    SYNC_AIRSYNCBASE_ATTACHMENT => "SyncBaseAttachment",
+                    SYNC_AIRSYNCBASE_ADD => "SyncBaseAttachmentAdd",
+                    SYNC_AIRSYNCBASE_DELETE => "SyncBaseAttachmentDelete",
+                ],
+            ];
+            $mapping[SYNC_AIRSYNCBASE_LOCATION] = [
                 self::STREAMER_VAR => "location2",
                 self::STREAMER_TYPE => "SyncLocation",
-				self::STREAMER_RONOTIFY => true,
-			];
-			$mapping[SYNC_POOMCAL_CLIENTUID] = [
-				self::STREAMER_VAR => "clientuid",
-				self::STREAMER_RONOTIFY => true,
-			];
-			// Placeholder for the InstanceId (recurrence exceptions) and its deletion request
-			$mapping[SYNC_AIRSYNCBASE_INSTANCEID] = [
-				self::STREAMER_VAR => "instanceid",
-				self::STREAMER_TYPE => self::STREAMER_TYPE_IGNORE,
-			];
-			$mapping[SYNC_AIRSYNCBASE_INSTANCEID_DELETE] = [
-				self::STREAMER_VAR => "instanceiddelete",
-				self::STREAMER_TYPE => self::STREAMER_TYPE_IGNORE,
-			];
-			
-			// unset these properties because airsyncbase location will be used instead
-			unset($mapping[SYNC_POOMCAL_LOCATION]);
-		}
+                self::STREAMER_RONOTIFY => true,
+            ];
+            $mapping[SYNC_POOMCAL_CLIENTUID] = [
+                self::STREAMER_VAR => "clientuid",
+                self::STREAMER_RONOTIFY => true,
+            ];
+            // Placeholder for the InstanceId (recurrence exceptions) and its deletion request
+            $mapping[SYNC_AIRSYNCBASE_INSTANCEID] = [
+                self::STREAMER_VAR => "instanceid",
+                self::STREAMER_TYPE => self::STREAMER_TYPE_IGNORE,
+            ];
+            $mapping[SYNC_AIRSYNCBASE_INSTANCEID_DELETE] = [
+                self::STREAMER_VAR => "instanceiddelete",
+                self::STREAMER_TYPE => self::STREAMER_TYPE_IGNORE,
+            ];
+            
+            // unset these properties because airsyncbase location will be used instead
+            unset($mapping[SYNC_POOMCAL_LOCATION]);
+        }
 
         parent::__construct($mapping);
 
@@ -341,5 +341,5 @@ class SyncAppointment extends SyncObject {
 }
 
 class SyncAppointmentResponse extends SyncAppointment {
-	use ResponseTrait;
+    use ResponseTrait;
 }

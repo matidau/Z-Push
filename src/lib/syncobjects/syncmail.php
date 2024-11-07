@@ -234,5 +234,5 @@ class SyncMail extends SyncObject {
 }
 
 class SyncMailResponse extends SyncMail {
-	use ResponseTrait;
+    use ResponseTrait;
 }

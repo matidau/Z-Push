@@ -400,13 +400,13 @@ abstract class SyncObject extends Streamer {
     }
 
     /**
-	 * Indicates the amount of paramters that were set before Checks were executed and potentially set other parameters.
-	 *
-	 * @return bool/int	- returns false if Check() was not executed
-	 */
-	public function getCheckedParameters() {
-		return $this->checkedParameters;
-	}
+     * Indicates the amount of paramters that were set before Checks were executed and potentially set other parameters.
+     *
+     * @return bool/int    - returns false if Check() was not executed
+     */
+    public function getCheckedParameters() {
+        return $this->checkedParameters;
+    }
 
     /**
      * Method checks if the object has the minimum of required parameters
@@ -460,9 +460,9 @@ abstract class SyncObject extends Streamer {
             if (isset($v[self::STREAMER_CHECKS])) {
                 foreach ($v[self::STREAMER_CHECKS] as $rule => $condition) {
                     // count parameter if it's set
-					if (isset($this->{$v[self::STREAMER_VAR]})) {
-						++$this->checkedParameters;
-					}
+                    if (isset($this->{$v[self::STREAMER_VAR]})) {
+                        ++$this->checkedParameters;
+                    }
                     
                     // check REQUIRED settings
                     if ($rule === self::STREAMER_CHECK_REQUIRED && (!isset($this->{$v[self::STREAMER_VAR]}) || $this->{$v[self::STREAMER_VAR]} === '' ) ) {

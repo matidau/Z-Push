@@ -243,5 +243,5 @@ class SyncContact extends SyncObject {
 }
 
 class SyncContactResponse extends SyncContact {
-	use ResponseTrait;
+    use ResponseTrait;
 }

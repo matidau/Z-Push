@@ -87,10 +87,10 @@ abstract class InterProcessData {
                     $this->ipcProvider = new $this->provider_class($this->type, $this->allocate, get_class($this), $this->type);
                 }
             } else {
-            	if (!($this instanceof TopCollector) && $this->provider_class !== 'IpcSharedMemoryProvider' ) {
+                if (!($this instanceof TopCollector) && $this->provider_class !== 'IpcSharedMemoryProvider' ) {
                     $this->type = $type. "-". $this->type;
-            	}
-            	$this->ipcProvider = new $this->provider_class($this->type, $this->allocate, get_class($this), $type);
+                }
+                $this->ipcProvider = new $this->provider_class($this->type, $this->allocate, get_class($this), $type);
             }
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("%s initialised with IPC provider '%s' with type '%s'", get_class($this), $this->provider_class, $this->type));
 

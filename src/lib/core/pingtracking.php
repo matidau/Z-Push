@@ -109,7 +109,7 @@ class PingTracking extends InterProcessData {
             foreach ($pings[self::$devid][self::$user] as $pid=>$starttime)
                 if ($starttime > self::$start) {
                     return true;
-				}
+                }
                 elseif ($starttime == self::$start) {
                     // Arbitrary decision to differentiate multiple processes that started at the same second for the same user. Compare PIDs
                     // If the other process has a bigger PID then kill this process

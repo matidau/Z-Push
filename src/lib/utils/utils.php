@@ -1479,8 +1479,8 @@ class Utils {
      * Creates a Compact DateTime from a UTC Timestamp - Formats used for ActiveSync yyyyMMddTHHmmSSZ and yyyy-MM-ddTHH:mm:SS.000Z
      *
      * @param timestamp    $ts
-	 *
-	 * @param string       $format
+     *
+     * @param string       $format
      *
      * @access public
      * @return string

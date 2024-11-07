@@ -41,25 +41,25 @@ class SyncAppointmentException extends SyncAppointment {
                                                                                     self::STREAMER_RONOTIFY => true),
                 );
         
-		// pre 16.0 use exceptionstarttime
-		if (Request::GetProtocolVersion() < 16.0) {
+        // pre 16.0 use exceptionstarttime
+        if (Request::GetProtocolVersion() < 16.0) {
             $this->mapping += array(
                 SYNC_POOMCAL_EXCEPTIONSTARTTIME                         => array (  self::STREAMER_VAR      => "exceptionstarttime",
                                                                                     self::STREAMER_TYPE     => self::STREAMER_TYPE_DATE,
                                                                                     self::STREAMER_CHECKS   => array(   self::STREAMER_CHECK_REQUIRED       => self::STREAMER_CHECK_SETONE),
                                                                                     self::STREAMER_RONOTIFY => true),
             );
-		}
-		// AS 16.0+ use instanceid
-		else {
-			// overwrite SYNC_AIRSYNCBASE_INSTANCEID definition here
+        }
+        // AS 16.0+ use instanceid
+        else {
+            // overwrite SYNC_AIRSYNCBASE_INSTANCEID definition here
             $this->mapping += array(
                 SYNC_AIRSYNCBASE_INSTANCEID                             => array (  self::STREAMER_VAR => "instanceid",
                                                                                     self::STREAMER_TYPE => self::STREAMER_TYPE_DATE,
                                                                                     self::STREAMER_CHECKS => [self::STREAMER_CHECK_REQUIRED => self::STREAMER_CHECK_SETONE],
                                                                                     self::STREAMER_RONOTIFY => true,
             );
-		}        
+        }        
               
 
         // some parameters are not required in an exception, others are not allowed to be set in SyncAppointmentExceptions

@@ -176,5 +176,5 @@ class SyncTask extends SyncObject {
 }
 
 class SyncTaskResponse extends SyncTask {
-	use ResponseTrait;
+    use ResponseTrait;
 }

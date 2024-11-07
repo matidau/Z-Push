@@ -63,9 +63,9 @@ class Provisioning extends RequestProcessor {
             if (self::$decoder->getElementStartTag(SYNC_PROVISION_REMOTEWIPE)) {
                 $requestName = SYNC_PROVISION_REMOTEWIPE;
             }
-			if (self::$decoder->getElementStartTag(SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE)) {
-				$requestName = SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE;
-			}
+            if (self::$decoder->getElementStartTag(SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE)) {
+                $requestName = SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE;
+            }
             if (self::$decoder->getElementStartTag(SYNC_PROVISION_POLICIES)) {
                 $requestName = SYNC_PROVISION_POLICIES;
             }
@@ -249,8 +249,8 @@ class Provisioning extends RequestProcessor {
             }
             else {
                 self::$encoder->startTag(SYNC_PROVISION_ACCOUNTONLYREMOTEWIPE, false, true);
-				self::$deviceManager->SetProvisioningWipeStatus(($rwstatusWiped) ? SYNC_PROVISION_RWSTATUS_WIPED_ACCOUNT_ONLY : SYNC_PROVISION_RWSTATUS_REQUESTED_ACCOUNT_ONLY);
-				self::$topCollector->AnnounceInformation(sprintf("Account Only Remote wipe %s", ($rwstatusWiped) ? "executed" : "requested"), true);
+                self::$deviceManager->SetProvisioningWipeStatus(($rwstatusWiped) ? SYNC_PROVISION_RWSTATUS_WIPED_ACCOUNT_ONLY : SYNC_PROVISION_RWSTATUS_REQUESTED_ACCOUNT_ONLY);
+                self::$topCollector->AnnounceInformation(sprintf("Account Only Remote wipe %s", ($rwstatusWiped) ? "executed" : "requested"), true);
             }
         }
 

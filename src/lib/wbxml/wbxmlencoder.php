@@ -562,14 +562,14 @@ class WBXMLEncoder extends WBXMLDefs {
      * @return 
      */
     private function stringToStream($string) {
-    	if (!is_string($string)) {
+        if (!is_string($string)) {
           return $string;
         }
 
-      	$stream = fopen('php://memory', 'r+');
-      	fwrite($stream, $string);
-      	rewind($stream);
-      	return $stream;
+        $stream = fopen('php://memory', 'r+');
+        fwrite($stream, $string);
+        rewind($stream);
+        return $stream;
     }
 
 }

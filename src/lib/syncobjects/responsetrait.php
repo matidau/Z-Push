@@ -7,9 +7,9 @@
  * serverid to be responded to the client.
  */
 trait ResponseTrait {
-	public $serverid;
-	public $hasResponse;
-	public function Check($logAsDebug = false) {
-		return true;
-	}
+    public $serverid;
+    public $hasResponse;
+    public function Check($logAsDebug = false) {
+        return true;
+    }
 }

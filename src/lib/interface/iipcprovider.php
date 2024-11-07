@@ -29,11 +29,11 @@ interface IIpcProvider
     /**
      * Constructor
      *
-	 * @param int $type
-	 * @param int $allocate
-	 * @param string $class
-	 * @param string $serverKey
-	 */
+     * @param int $type
+     * @param int $allocate
+     * @param string $class
+     * @param string $serverKey
+     */
     public function __construct($type, $allocate, $class, $serverKey);
 
     /**

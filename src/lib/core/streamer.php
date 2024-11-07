@@ -289,24 +289,24 @@ class Streamer implements Serializable {
                         foreach ($this->{$map[self::STREAMER_VAR]} as $element) {
                             if(is_object($element)) {
                                 // find corresponding encapsulation tag for element
-								if (!is_array($map[self::STREAMER_ARRAY])) {
-									$eltag = $map[self::STREAMER_ARRAY];
-								}
-								else {
-									$eltag = array_search(get_class($element), $map[self::STREAMER_ARRAY]);
-								}
-								$encoder->startTag($eltag); // Outputs object container (eg Attachment)
+                                if (!is_array($map[self::STREAMER_ARRAY])) {
+                                    $eltag = $map[self::STREAMER_ARRAY];
+                                }
+                                else {
+                                    $eltag = array_search(get_class($element), $map[self::STREAMER_ARRAY]);
+                                }
+                                $encoder->startTag($eltag); // Outputs object container (eg Attachment)
                                 $element->Encode($encoder);
                                 $encoder->endTag();
                             }
                             else {
-								// Do not output empty items. Not sure if we should output an empty tag with $encoder->startTag($map[self::STREAMER_ARRAY], false, true);
-								if (strlen($element) > 0) {
-									$encoder->startTag($map[self::STREAMER_ARRAY]);
-									$encoder->content($element);
-									$encoder->endTag();
-									$streamed = true;
-								}
+                                // Do not output empty items. Not sure if we should output an empty tag with $encoder->startTag($map[self::STREAMER_ARRAY], false, true);
+                                if (strlen($element) > 0) {
+                                    $encoder->startTag($map[self::STREAMER_ARRAY]);
+                                    $encoder->content($element);
+                                    $encoder->endTag();
+                                    $streamed = true;
+                                }
                             }
                         }
 

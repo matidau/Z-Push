@@ -495,15 +495,15 @@ class Sync extends RequestProcessor {
                                 }
                             }
 
-							// get the instanceId if available
-							$instanceid = false;
-							if (self::$decoder->getElementStartTag(SYNC_AIRSYNCBASE_INSTANCEID)) {
-								if (($instanceid = self::$decoder->getElementContent()) !== false) {
-									if (!self::$decoder->getElementEndTag()) { // end instanceid
-										return false;
-									}
-								}
-							}
+                            // get the instanceId if available
+                            $instanceid = false;
+                            if (self::$decoder->getElementStartTag(SYNC_AIRSYNCBASE_INSTANCEID)) {
+                                if (($instanceid = self::$decoder->getElementContent()) !== false) {
+                                    if (!self::$decoder->getElementEndTag()) { // end instanceid
+                                        return false;
+                                    }
+                                }
+                            }
 
                             if(self::$decoder->getElementStartTag(SYNC_CLIENTENTRYID)) {
                                 $clientid = self::$decoder->getElementContent();
@@ -552,20 +552,20 @@ class Sync extends RequestProcessor {
                             else
                                 $message = false;
 
-							// InstanceID sent: do action to a recurrency exception
-							if ($instanceid) {
-								// for delete actions we don't have an ASObject
-								if (!$message) {
-									$message = GSync::getSyncObjectFromFolderClass($spa->GetContentClass());
-									$message->Decode(self::$decoder);
-								}
-								$message->instanceid = $instanceid;
-								if ($element[EN_TAG] == SYNC_REMOVE) {
-									$message->instanceiddelete = true;
-									$element[EN_TAG] = SYNC_MODIFY;
-								}
-							}
-	                                
+                            // InstanceID sent: do action to a recurrency exception
+                            if ($instanceid) {
+                                // for delete actions we don't have an ASObject
+                                if (!$message) {
+                                    $message = GSync::getSyncObjectFromFolderClass($spa->GetContentClass());
+                                    $message->Decode(self::$decoder);
+                                }
+                                $message->instanceid = $instanceid;
+                                if ($element[EN_TAG] == SYNC_REMOVE) {
+                                    $message->instanceiddelete = true;
+                                    $element[EN_TAG] = SYNC_MODIFY;
+                                }
+                            }
+                                    
                             switch($element[EN_TAG]) {
                                 case SYNC_FETCH:
                                     array_push($actiondata["fetchids"], $serverid);
@@ -1117,17 +1117,17 @@ class Sync extends RequestProcessor {
                 self::$encoder->startTag(SYNC_STATUS);
                 self::$encoder->content((isset($actiondata["statusids"][$clientid])?$actiondata["statusids"][$clientid]:SYNC_STATUS_CLIENTSERVERCONVERSATIONERROR));
                 self::$encoder->endTag();
-				if (!empty($response->hasResponse)) {
-					self::$encoder->startTag(SYNC_DATA);
-					$response->Encode(self::$encoder);
-					self::$encoder->endTag();
-				}
+                if (!empty($response->hasResponse)) {
+                    self::$encoder->startTag(SYNC_DATA);
+                    $response->Encode(self::$encoder);
+                    self::$encoder->endTag();
+                }
                 self::$encoder->endTag();
             }
 
             // loop through modify operations which were not a success, send status
-			foreach($actiondata["modifyids"] as $serverid => $response) {
-				if (isset($actiondata["statusids"][$serverid]) && ($actiondata["statusids"][$serverid] !== SYNC_STATUS_SUCCESS || !empty($response->hasResponse))) {
+            foreach($actiondata["modifyids"] as $serverid => $response) {
+                if (isset($actiondata["statusids"][$serverid]) && ($actiondata["statusids"][$serverid] !== SYNC_STATUS_SUCCESS || !empty($response->hasResponse))) {
                     self::$encoder->startTag(SYNC_MODIFY);
                     self::$encoder->startTag(SYNC_SERVERENTRYID);
                     self::$encoder->content($serverid);
@@ -1135,11 +1135,11 @@ class Sync extends RequestProcessor {
                     self::$encoder->startTag(SYNC_STATUS);
                     self::$encoder->content($actiondata["statusids"][$serverid]);
                     self::$encoder->endTag();
-					if (!empty($response->hasResponse)) {
-						self::$encoder->startTag(SYNC_DATA);
-						$response->Encode(self::$encoder);
-						self::$encoder->endTag();
-					}                    
+                    if (!empty($response->hasResponse)) {
+                        self::$encoder->startTag(SYNC_DATA);
+                        $response->Encode(self::$encoder);
+                        self::$encoder->endTag();
+                    }                    
                     self::$encoder->endTag();
                 }
             }
@@ -1536,8 +1536,8 @@ class Sync extends RequestProcessor {
                                 $response = $this->importer->ImportMessageChange($serverid, $message);
                             }
 
-							$response->serverid = $serverid;
-							$actiondata["modifyids"][$serverid] = $response;
+                            $response->serverid = $serverid;
+                            $actiondata["modifyids"][$serverid] = $response;
                             $actiondata["statusids"][$serverid] = SYNC_STATUS_SUCCESS;
                         }
                     }

@@ -705,7 +705,7 @@ class ZPushAdminCLI {
                 $data[1], "\t",
                 $data[2], "\t",
                 $data[3], "\t",
-				( (isset($device->ignoredmessages) && !empty($device->ignoredmessages)) ? count($device->ignoredmessages) : 0), "\t",
+                ( (isset($device->ignoredmessages) && !empty($device->ignoredmessages)) ? count($device->ignoredmessages) : 0), "\t",
                 (($device->GetKoeLastAccess() && $device->GetKoeLastAccess() + 25260 < $device->GetLastSyncTime()) ? "KOE inactive":""), "\n";
             }
         }
