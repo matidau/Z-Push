@@ -1506,7 +1506,7 @@ class Utils {
      * @access private
      * @return long
      */
-    function parseDate($ts) {
+    function static parseDate($ts) {
         if(preg_match("/(\d{4})[^0-9]*(\d{2})[^0-9]*(\d{2})(T(\d{2})[^0-9]*(\d{2})[^0-9]*(\d{2})(.\d+)?Z){0,1}$/", $ts, $matches)) {
             if ($matches[1] >= 2038){
                 $matches[1] = 2038;
