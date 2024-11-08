@@ -440,7 +440,7 @@ class ImportChangesICS implements IImportChanges {
             $flags = SYNC_NEW_MESSAGE;
 
         if(mapi_importcontentschanges_importmessagechange($this->importer, $props, $flags, $mapimessage)) {
-            $this->mapiprovider->SetMessage($mapimessage, $message);
+            $response = $this->mapiprovider->SetMessage($mapimessage, $message);
             mapi_savechanges($mapimessage);
 
             if (mapi_last_hresult())
@@ -448,7 +448,9 @@ class ImportChangesICS implements IImportChanges {
 
             $sourcekeyprops = mapi_getprops($mapimessage, array (PR_SOURCE_KEY));
 
-            return $this->prefix . bin2hex($sourcekeyprops[PR_SOURCE_KEY]);
+            $response->serverid = $this->prefix . bin2hex($sourcekeyprops[PR_SOURCE_KEY]);
+
+            return $response;
         }
         else
             throw new StatusException(sprintf("ImportChangesICS->ImportMessageChange('%s','%s'): Error updating object: 0x%X", $id, get_class($message), mapi_last_hresult()), SYNC_STATUS_OBJECTNOTFOUND);
@@ -480,9 +482,19 @@ class ImportChangesICS implements IImportChanges {
             return true;
         }
 
+        // check if we need to do actions before deleting this message (e.g. send meeting cancellations to attendees)
+        $entryid = mapi_msgstore_entryidfromsourcekey($this->store, $this->folderid, hex2bin($sk));
+        if ($entryid) {
+            // open the source message
+            $mapimessage = mapi_msgstore_openentry($this->store, $entryid);
+            $this->mapiprovider->PreDeleteMessage($mapimessage);
+        }
+
         // do a 'soft' delete so people can un-delete if necessary
-        if(mapi_importcontentschanges_importmessagedeletion($this->importer, 1, array(hex2bin($sk))))
+        mapi_importcontentschanges_importmessagedeletion($this->importer, 1, [hex2bin($sk)]);
+        if (mapi_last_hresult()) {
             throw new StatusException(sprintf("ImportChangesICS->ImportMessageDeletion('%s'): Error updating object: 0x%X", $sk, mapi_last_hresult()), SYNC_STATUS_OBJECTNOTFOUND);
+        }
 
         return true;
     }
@@ -496,10 +508,11 @@ class ImportChangesICS implements IImportChanges {
      * @param array         $categories
      *
      * @access public
-     * @return boolean
+     * @return SyncObject
      * @throws StatusException
      */
     public function ImportMessageReadFlag($id, $flags, $categories = array()) {
+        $response = new SyncMailResponse();
         list($fsk,$sk) = Utils::SplitMessageId($id);
 
         // if $fsk is set, we convert it into a backend id.
@@ -545,7 +558,7 @@ class ImportChangesICS implements IImportChanges {
             $p = mapi_message_setreadflag($realMessage, $flag);
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("ImportChangesICS->ImportMessageReadFlag('%s','%d'): setting readflag on message: 0x%X", $id, $flags, mapi_last_hresult()));
         }
-        return true;
+        return $response;
     }
 
     /**

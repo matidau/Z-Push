@@ -45,11 +45,13 @@ abstract class SyncObject extends Streamer {
 
     protected $unsetVars;
     protected $supportsPrivateStripping;
+    protected $checkedParameters;
 
 
     public function __construct($mapping) {
         $this->unsetVars = array();
         $this->supportsPrivateStripping = false;
+        $this->checkedParameters = false;
         parent::__construct($mapping);
     }
 
@@ -398,6 +400,15 @@ abstract class SyncObject extends Streamer {
     }
 
     /**
+     * Indicates the amount of paramters that were set before Checks were executed and potentially set other parameters.
+     *
+     * @return bool/int    - returns false if Check() was not executed
+     */
+    public function getCheckedParameters() {
+        return $this->checkedParameters;
+    }
+
+    /**
      * Method checks if the object has the minimum of required parameters
      * and fullfills semantic dependencies
      *
@@ -424,6 +435,7 @@ abstract class SyncObject extends Streamer {
         }
 
         $defaultLogLevel = LOGLEVEL_WARN;
+        $this->checkedParameters = 0;
 
         // in some cases non-false checks should not provoke a WARN log but only a DEBUG log
         if ($logAsDebug)
@@ -447,6 +459,11 @@ abstract class SyncObject extends Streamer {
 
             if (isset($v[self::STREAMER_CHECKS])) {
                 foreach ($v[self::STREAMER_CHECKS] as $rule => $condition) {
+                    // count parameter if it's set
+                    if (isset($this->{$v[self::STREAMER_VAR]})) {
+                        ++$this->checkedParameters;
+                    }
+                    
                     // check REQUIRED settings
                     if ($rule === self::STREAMER_CHECK_REQUIRED && (!isset($this->{$v[self::STREAMER_VAR]}) || $this->{$v[self::STREAMER_VAR]} === '' ) ) {
                         // parameter is not set but ..

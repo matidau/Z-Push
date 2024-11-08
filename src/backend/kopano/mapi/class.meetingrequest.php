@@ -612,7 +612,7 @@ If it is the first time this attendee has proposed a new date/time, increment th
      * @param string $newProposedStartTime contains starttime if user has proposed other time
      * @param string $newProposedEndTime contains endtime if user has proposed other time
      * @param string $basedate start of day of occurrence for which user has accepted the recurrent meeting
-	 * @param boolean $isImported true to indicate that MR is imported from .ics or .vcs file else it false.
+     * @param boolean $isImported true to indicate that MR is imported from .ics or .vcs file else it false.
      * @return string $entryid entryid of item which created/updated in calendar
      */
     function doAccept($tentative, $sendresponse, $move, $newProposedStartTime=false, $newProposedEndTime=false, $body=false, $userAction = false, $store=false, $basedate = false, $isImported = false)
@@ -1830,7 +1830,7 @@ If it is the first time this attendee has proposed a new date/time, increment th
 
     /**
      * Function will resolve the user and open its store
-	 * @param String $ownerentryid the entryid of the user
+     * @param String $ownerentryid the entryid of the user
      * @return MAPIStore store of the user
      */
     function openCustomUserStore($ownerentryid)
@@ -3742,7 +3742,7 @@ If it is the first time this attendee has proposed a new date/time, increment th
         }
 
         return $localCategories;
-	}
+    }
 
     /**
      * Helper function which is use to apply local categories on respective occurrences.

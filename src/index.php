@@ -146,6 +146,7 @@ include_once(ZPUSH_CONFIG);
             header(ZPush::GetServerHeader());
             header(ZPush::GetSupportedProtocolVersions());
             header(ZPush::GetSupportedCommands());
+            header("X-AspNet-Version: 4.0.30319");
             ZLog::Write(LOGLEVEL_INFO, $nopostex->getMessage());
         }
         else if ($nopostex->getCode() == NoPostRequestException::GET_REQUEST) {

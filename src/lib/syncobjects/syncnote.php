@@ -128,3 +128,7 @@ class SyncNote extends SyncObject {
         }
     }
 }
+
+class SyncNoteResponse extends SyncNote {
+    use ResponseTrait;
+}

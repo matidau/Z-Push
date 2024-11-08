@@ -805,7 +805,7 @@ class BackendKopano implements IBackend, ISearchProvider {
         if(!strpos($attname, ":"))
             throw new StatusException(sprintf("KopanoBackend->GetAttachmentData('%s'): Error, attachment requested for non-existing item", $attname), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
 
-        list($id, $attachnum, $parentEntryid) = explode(":", $attname);
+        list($id, $attachnum, $parentEntryid, $exceptionBasedate) = explode(":", $attname);
         if (isset($parentEntryid)) {
             $this->Setup(ZPush::GetAdditionalSyncFolderStore($parentEntryid));
         }
@@ -819,6 +819,14 @@ class BackendKopano implements IBackend, ISearchProvider {
         $attach = mapi_message_openattach($message, $attachnum);
         if(!$attach)
             throw new StatusException(sprintf("KopanoBackend->GetAttachmentData('%s'): Error, unable to open attachment number '%s' with: 0x%X", $attname, $attachnum, mapi_last_hresult()), SYNC_ITEMOPERATIONSSTATUS_INVALIDATT);
+
+        // attachment of a recurring appointment execption
+        if(strlen($exceptionBasedate) > 1) {
+            $recurrence = new Recurrence($this->store, $message);
+            $exceptionatt = $recurrence->getExceptionAttachment(hex2bin($exceptionBasedate));
+            $exceptionobj = mapi_attach_openobj($exceptionatt, 0);
+            $attach = mapi_message_openattach($exceptionobj, $attachnum);
+        }
 
         // get necessary attachment props
         $attprops = mapi_getprops($attach, array(PR_ATTACH_MIME_TAG, PR_ATTACH_MIME_TAG_W, PR_ATTACH_METHOD));
@@ -895,7 +903,9 @@ class BackendKopano implements IBackend, ISearchProvider {
      * @return string       id of the created/updated calendar obj
      * @throws StatusException
      */
-    public function MeetingResponse($requestid, $folderid, $response) {
+    public function MeetingResponse($requestid, $folderid, $request) {
+        $requestid = $calendarid = $request['requestid'];
+        $response = $request['response'];
         // Use standard meeting response code to process meeting request
         list($fid, $requestid) = Utils::SplitMessageId($requestid);
         $reqentryid = mapi_msgstore_entryidfromsourcekey($this->store, hex2bin($folderid), hex2bin($requestid));
@@ -908,9 +918,15 @@ class BackendKopano implements IBackend, ISearchProvider {
 
         // ios sends calendar item in MeetingResponse
         // @see https://jira.z-hub.io/browse/ZP-1524
+        $searchForResultCalendarItem = false;
         $folderClass = ZPush::GetDeviceManager()->GetFolderClassFromCacheByID($fid);
         // find the corresponding meeting request
-        if ($folderClass != 'Email') {
+        if ($folderClass == 'Email') {
+            // The mobile requested this on a MR, when finishing we need to search for the resulting calendar item!
+            $searchForResultCalendarItem = true;
+        }
+        // we are operating on the calendar item - try searching for the corresponding meeting request first
+        else {
             $props = MAPIMapping::GetMeetingRequestProperties();
             $props = getPropIdsFromStrings($this->store, $props);
 
@@ -934,18 +950,23 @@ class BackendKopano implements IBackend, ISearchProvider {
 
             $inboxcontents = mapi_folder_getcontentstable($folder);
 
-            $rows = mapi_table_queryallrows($inboxcontents, array(PR_ENTRYID), $restrict);
-            if (empty($rows)) {
-                throw new StatusException(sprintf("BackendKopano->MeetingResponse('%s','%s', '%s'): Error, meeting request not found in the inbox", $requestid, $folderid, $response), SYNC_MEETRESPSTATUS_INVALIDMEETREQ);
+            $rows = mapi_table_queryallrows($inboxcontents, [PR_ENTRYID, PR_SOURCE_KEY], $restrict);
+            // AS 14.0 and older can only respond to a MR in the Inbox!
+            if (empty($rows) && Request::GetProtocolVersion() <= 14.0) {
+                throw new StatusException(sprintf("BackendKopano->MeetingResponse('%s','%s', '%s'): Error, meeting request not found in the inbox. Can't proceed, aborting!", $requestid, $folderid, $response), SYNC_MEETRESPSTATUS_INVALIDMEETREQ);
             }
-            ZLog::Write(LOGLEVEL_DEBUG, "BackendKopano->MeetingResponse found meeting request in the inbox");
-            $mapimessage = mapi_msgstore_openentry($this->store, $rows[0][PR_ENTRYID]);
-            $reqentryid = $rows[0][PR_ENTRYID];
+            if (!empty($rows)) {
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendKopano->MeetingResponse found meeting request in the inbox with ID: %s", bin2hex($rows[0][PR_SOURCE_KEY])));
+                $reqentryid = $rows[0][PR_ENTRYID];
+                $mapimessage = mapi_msgstore_openentry($this->store, $reqentryid);
+                // As we are using an MR from the inbox, when finishing we need to search for the resulting calendar item!
+                $searchForResultCalendarItem = true;
+            }
         }
 
         $meetingrequest = new Meetingrequest($this->store, $mapimessage, $this->session);
 
-        if(!$meetingrequest->isMeetingRequest())
+        if (Request::GetProtocolVersion() <= 14.0 && !$meetingrequest->isMeetingRequest() && !$meetingrequest->isMeetingRequestResponse() && !$meetingrequest->isMeetingCancellation()) {
             throw new StatusException(sprintf("BackendKopano->MeetingResponse('%s','%s', '%s'): Error, attempt to respond to non-meeting request", $requestid, $folderid, $response), SYNC_MEETRESPSTATUS_INVALIDMEETREQ);
 
         if($meetingrequest->isLocalOrganiser())
@@ -956,14 +977,29 @@ class BackendKopano implements IBackend, ISearchProvider {
         // anymore for the ios devices since at least version 12.4. Z-Push will send the
         // accepted email in such a case.
         // @see https://jira.z-hub.io/browse/ZP-1524
-        $sendresponse = false;
-        $deviceType = strtolower(Request::GetDeviceType());
-        if ($deviceType == 'iphone' || $deviceType == 'ipad' || $deviceType == 'ipod') {
-            $matches = array();
-            if (preg_match("/^Apple-.*?\/(\d{4})\./", Request::GetUserAgent(), $matches) && isset($matches[1]) && $matches[1] >= 1607 && $matches[1] <= 1707) {
-                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendKopano->MeetingResponse: iOS device %s->%s", Request::GetDeviceType(), Request::GetUserAgent()));
-                $sendresponse = true;
-            }
+        // AS-16.1: did the attendee propose a new time ?
+        if (!empty($request['proposedstarttime'])) {
+            $request['proposedstarttime'] = Utils::parseDate($request['proposedstarttime']);
+        }
+        else {
+            $request['proposedstarttime'] = false;
+        }
+        if (!empty($request['proposedendtime'])) {
+            $request['proposedendtime'] = Utils::parseDate($request['proposedendtime']);
+        }
+        else {
+            $request['proposedendtime'] = false;
+        }
+        if (!isset($request['body'])) {
+            $request['body'] = false;
+        }
+        // from AS-14.0 we have to take care of sending out meeting request responses
+        if (Request::GetProtocolVersion() >= 14.0) {
+            $sendresponse = true;
+        }
+        else {
+            // Old AS versions send MR updates by themselves - so our MR processing doesn't need to do this
+            $sendresponse = false;
         }
         switch($response) {
             case 1:     // accept
@@ -971,7 +1007,7 @@ class BackendKopano implements IBackend, ISearchProvider {
                 $entryid = $meetingrequest->doAccept(false, $sendresponse, false, false, false, false, true); // last true is the $userAction
                 break;
             case 2:        // tentative
-                $entryid = $meetingrequest->doAccept(true, $sendresponse, false, false, false, false, true); // last true is the $userAction
+                $entryid = $meetingrequest->doAccept(true, $sendresponse, false, $request['proposedstarttime'], $request['proposedendtime'], $request['body'], true); // last true is the $userAction
                 break;
             case 3:        // decline
                 $meetingrequest->doDecline(false);
@@ -980,19 +1016,21 @@ class BackendKopano implements IBackend, ISearchProvider {
 
         // F/B will be updated on logoff
 
-        // We have to return the ID of the new calendar item, so do that here
-        $calendarid = "";
-        $calFolderId = "";
-        if (isset($entryid)) {
-            $newitem = mapi_msgstore_openentry($this->store, $entryid);
-            // new item might be in a delegator's store. ActiveSync does not support accepting them.
-            if (!$newitem) {
-                throw new StatusException(sprintf("BackendKopano->MeetingResponse('%s','%s', '%s'): Object with entryid '%s' was not found in user's store (0x%X). It might be in a delegator's store.", $requestid, $folderid, $response, bin2hex($entryid), mapi_last_hresult()), SYNC_MEETRESPSTATUS_SERVERERROR, null, LOGLEVEL_WARN);
-            }
+        // We have to return the ID of the new calendar item if it was created from an email
+        if ($searchForResultCalendarItem) {
+            $calendarid = "";
+            $calFolderId = "";
+            if (isset($entryid)) {
+                $newitem = mapi_msgstore_openentry($this->store, $entryid);
+                // new item might be in a delegator's store. ActiveSync does not support accepting them.
+                if (!$newitem) {
+                    throw new StatusException(sprintf("Grommunio->MeetingResponse('%s','%s', '%s'): Object with entryid '%s' was not found in user's store (0x%X). It might be in a delegator's store.", $requestid, $folderid, $response, bin2hex($entryid), mapi_last_hresult()), SYNC_MEETRESPSTATUS_SERVERERROR, null, LOGLEVEL_WARN);
+                }
 
-            $newprops = mapi_getprops($newitem, array(PR_SOURCE_KEY, PR_PARENT_SOURCE_KEY));
-            $calendarid = bin2hex($newprops[PR_SOURCE_KEY]);
-            $calFolderId = bin2hex($newprops[PR_PARENT_SOURCE_KEY]);
+                $newprops = mapi_getprops($newitem, array(PR_SOURCE_KEY, PR_PARENT_SOURCE_KEY));
+                $calendarid = bin2hex($newprops[PR_SOURCE_KEY]);
+                $calFolderId = bin2hex($newprops[PR_PARENT_SOURCE_KEY]);                
+            }
         }
 
         // on recurring items, the MeetingRequest class responds with a wrong entryid
@@ -1499,7 +1537,7 @@ class BackendKopano implements IBackend, ISearchProvider {
         }
 
         $storeProps = mapi_getprops($this->store, array(PR_STORE_SUPPORT_MASK, PR_FINDER_ENTRYID));
-        if (($storeProps[PR_STORE_SUPPORT_MASK] & STORE_SEARCH_OK) != STORE_SEARCH_OK) {
+        if (isset($storeProps[PR_STORE_SUPPORT_MASK]) && (($storeProps[PR_STORE_SUPPORT_MASK] & STORE_SEARCH_OK) != STORE_SEARCH_OK)) {
             ZLog::Write(LOGLEVEL_WARN, "Store doesn't support search folders. Public store doesn't have FINDER_ROOT folder");
             return false;
         }
