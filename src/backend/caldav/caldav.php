@@ -1295,7 +1295,7 @@ class BackendCalDAV extends BackendDiff {
                     break;
             }
         }
-        if (isset($data->reminder)) {
+        if (isset($data->reminder) && $data->reminder !== '') {
             $valarm = new iCalComponent();
             $valarm->SetType("VALARM");
             $valarm->AddProperty("ACTION", "DISPLAY");
