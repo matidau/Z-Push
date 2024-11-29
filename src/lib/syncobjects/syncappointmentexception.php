@@ -57,7 +57,7 @@ class SyncAppointmentException extends SyncAppointment {
                 SYNC_AIRSYNCBASE_INSTANCEID                             => array (  self::STREAMER_VAR => "instanceid",
                                                                                     self::STREAMER_TYPE => self::STREAMER_TYPE_DATE,
                                                                                     self::STREAMER_CHECKS => [self::STREAMER_CHECK_REQUIRED => self::STREAMER_CHECK_SETONE],
-                                                                                    self::STREAMER_RONOTIFY => true,
+                                                                                    self::STREAMER_RONOTIFY => true),
             );
         }        
               
