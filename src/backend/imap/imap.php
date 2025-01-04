@@ -40,6 +40,7 @@ set_include_path(get_include_path() . PATH_SEPARATOR . '/usr/share/awl/inc' . PA
 class BackendIMAP extends BackendDiff implements ISearchProvider {
     private $wasteID;
     private $sentID;
+    private $draftID;
     private $server;
     private $mbox;
     private $mboxFolder;
@@ -71,6 +72,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         $this->wasteID = false;
         $this->sentID = false;
+        $this->draftID = false;
         $this->mboxFolder = "";
 
         if (!function_exists("imap_open"))
@@ -107,6 +109,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     public function Logon($username, $domain, $password) {
         $this->wasteID = false;
         $this->sentID = false;
+        $this->draftID = false;
         $this->server = "{" . IMAP_SERVER . ":" . IMAP_PORT . "/imap" . IMAP_OPTIONS . "}";
 
         if (!function_exists("imap_open"))
@@ -853,6 +856,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $folder->parentid = "0";
             $folder->displayname = "Drafts";
             $folder->type = SYNC_FOLDER_TYPE_DRAFTS;
+            $this->draftID = $id;
         }
         else if (strcasecmp($imapid, $this->create_name_folder(IMAP_FOLDER_SENT)) == 0) {
             $folder->parentid = "0";
