@@ -1674,6 +1674,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
+        // 'draft'
+        if(!$id) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
+            
+            $saved = $this->saveDraftMail($message);
+
+            if ($saved) {
+                $id = $this->getRecentDraft();
+            }
+        }
+
         if (isset($message->flag)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('Setting flag')"));
 
