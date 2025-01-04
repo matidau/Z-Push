@@ -3267,4 +3267,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return $saved;
     }    
+
+    /**
+     * Adds a message with draft and seen flag to a specified folder (used for saving draft items)
+     *
+     * @param string        $folderid       id of the folder
+     * @param string        $header         header of the message
+     * @param long          $body           body of the message
+     *
+     * @access protected
+     * @return boolean      status
+     */
+    protected function addDraftMessage($folderid, $header, $body) {
+        $header_body = str_replace("\n", "\r\n", str_replace("\r", "", $header . "\n\n" . $body));
+
+        return @imap_append($this->mbox, $this->server . $folderid, $header_body, "\\Seen");
+    }    
 };
