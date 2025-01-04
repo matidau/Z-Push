@@ -3030,4 +3030,177 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         return $attributes;
     }
+    /**
+     * Saves Draft email an e-mail
+     * This messages needs to be saved into the 'sent items' folder
+     *
+     * @param SyncMail  $sm     SyncMail object containging message
+     *
+     * @access public
+     * @return boolean
+     * @throws StatusException
+     */
+    public function saveDraftMail($sm) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): We get the new message"));
+
+        // build basic message,  set from header and body
+        $fromaddr = $sm->from;
+        if (empty($fromaddr)){
+            $fromaddr = getDefaultFromValue($this->username, $this->domain);
+        }
+
+        if (is_array($sm->to)) {
+            $toaddr = implode(', ', $sm->to);
+        }
+        if (is_array($sm->cc)) {
+            $ccaddr = implode(', ', $sm->cc);
+        }
+        if (is_array($sm->bcc)) {
+            $bccaddr = implode(', ', $sm->bcc);
+        }
+
+        switch ($sm->asbody->type) {
+            case SYNC_BODYPREFERENCE_UNDEFINED:
+                $contenttype = 'application/octet-stream';
+                break;
+            case SYNC_BODYPREFERENCE_PLAIN:
+                $contenttype = 'text/plain';
+                break;
+            case SYNC_BODYPREFERENCE_HTML:
+                $contenttype = 'text/html';
+                break;
+            case SYNC_BODYPREFERENCE_RTF:
+                $contenttype = 'text/rtf';
+                break;
+            case SYNC_BODYPREFERENCE_MIME:
+                $contenttype = 'multipart/alternative';
+                break;
+        }
+
+        $body = stream_get_contents($sm->asbody->data);        
+
+        $mimedata = 'From: ' . $fromaddr;
+        if(!empty($toaddr)) {
+            $mimedata = $mimedata . "\n" . 'To: ' . $toaddr;
+        }
+        if(!empty($ccaddr)) {
+            $mimedata = $mimedata . "\n" . 'Cc: ' . $ccaddr;
+        }
+        if(!empty($bccaddr)) {
+            $mimedata = $mimedata . "\n" . 'Bcc: ' . $bccaddr;
+        }
+        $mimedata = $mimedata . "\n" . 'Subject: ' . $sm->subject;
+        $mimedata = $mimedata . "\n" . 'Content-Type: ' . $contenttype . '; charset=UTF-8';
+        $mimedata = $mimedata . "\n";
+        $mimedata = $mimedata . "\n" . $body;
+
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): mimedata \n%s", $mimedata));
+
+        $mobj = new Mail_mimeDecode($mimedata);
+        $message = $mobj->decode(array('decode_headers' => 'utf-8', 'decode_bodies' => true, 'include_bodies' => true, 'rfc_822bodies' => true, 'charset' => 'utf-8'));
+        unset($mobj);
+
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): We get the From and To"));
+        $Mail_RFC822 = new Mail_RFC822();
+
+        $this->setFromHeaderValue($message->headers);
+        $fromaddr = $this->parseAddr($Mail_RFC822->parseAddressList($message->headers["from"]));
+
+        $toaddr = "";
+        if (isset($message->headers["to"])) {
+            // don't validate atoms, headers might be UTF-8 not ASCII
+            $toaddr = $Mail_RFC822->parseAddressList($message->headers["to"], null, null, false, null);
+
+            $message->headers["to"] = Utils::CheckAndFixEncodingInHeadersOfSentMail($toaddr);
+            $toaddr = $this->parseAddr($toaddr);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): To defined: %s", $toaddr));
+        }
+
+        if (isset($message->headers["cc"])) {
+            $message->headers["cc"] = Utils::CheckAndFixEncodingInHeadersOfSentMail($Mail_RFC822->parseAddressList($message->headers["cc"], null, null, false, null));
+        }
+
+        if (isset($message->headers["bcc"])) {
+            $message->headers["bcc"] = Utils::CheckAndFixEncodingInHeadersOfSentMail($Mail_RFC822->parseAddressList($message->headers["bcc"], null, null, false, null));
+        }
+
+        unset($Mail_RFC822);
+
+        if (isset($message->headers["subject"]) && mb_detect_encoding($message->headers["subject"], "UTF-8") != false && preg_match('/[^\x00-\x7F]/', $message->headers["subject"]) == 1) {
+            mb_internal_encoding("UTF-8");
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SendMail(): Subject in raw UTF-8: %s", $message->headers["subject"]));
+            $message->headers["subject"] = mb_encode_mimeheader($message->headers["subject"]);
+        }
+
+        $this->setReturnPathValue($message->headers, $fromaddr);
+
+        if (defined('IMAP_RECEIVED') && IMAP_RECEIVED)
+            $message->headers["received"] = "from " . Request::GetRemoteAddr() . " by " . gethostname() . " (Z-Push); " . $message->headers["date"];
+
+        $finalBody = "";
+        $finalHeaders = array();
+
+
+        //http://pear.php.net/manual/en/package.mail.mail-mime.example.php
+        //http://pear.php.net/manual/en/package.mail.mail-mimedecode.decode.php
+        //http://pear.php.net/manual/en/package.mail.mail-mimepart.addsubpart.php
+
+        // I don't mind if the new message is multipart or not, I always will create a multipart. It's simpler
+        $finalEmail = new Mail_mimePart('', array('content_type' => 'multipart/mixed'));
+
+        $this->addTextPartsMessage($finalEmail, $message);
+        if (isset($message->parts)) {
+            // We add extra parts from the new message
+            add_extra_sub_parts($finalEmail, $message->parts);
+        }
+
+        // We encode the final message
+        $boundary = '=_' . md5(rand() . microtime());
+        $finalEmail = $finalEmail->encode($boundary);
+
+        $finalHeaders = array('MIME-Version' => '1.0');
+        // We copy all the non-existent headers, minus content_type
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): Copying new headers"));
+        foreach ($message->headers as $k => $v) {
+            if (strcasecmp($k, 'content-type') != 0 && strcasecmp($k, 'content-transfer-encoding') != 0 && strcasecmp($k, 'mime-version') != 0) {
+                if (!isset($finalHeaders[$k]))
+                    $finalHeaders[ucwords($k)] = $v;
+            }
+        }
+        foreach ($finalEmail['headers'] as $k => $v) {
+            if (!isset($finalHeaders[$k]))
+                $finalHeaders[$k] = $v;
+        }
+
+        $finalBody = "This is a multi-part message in MIME format.\n" . $finalEmail['body'];
+
+        unset($finalEmail);
+
+        unset($message);
+
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): Final mail to save:"));
+
+        if(ZLog::IsWbxmlDebugEnabled()) {
+            $logWbxmlHeaders = "";
+            foreach ($finalHeaders as $k => $v) {
+                $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+            }
+            ZLog::Write(LOGLEVEL_WBXML, $logWbxmlHeaders, false);
+            unset($logWbxmlHeaders);
+
+            $logWbxmlBody = "";
+            foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline) {
+                $logWbxmlBody .= "Body: " . $bodyline . PHP_EOL;
+            }
+            ZLog::Write(LOGLEVEL_WBXML, $logWbxmlBody, false);
+            unset($logWbxmlBody);
+        }
+
+        $save = $this->saveDraftMessage($finalHeaders, $finalBody);
+
+        unset($finalHeaders);
+        unset($finalBody);
+
+        return $save;
+    }    
 };
