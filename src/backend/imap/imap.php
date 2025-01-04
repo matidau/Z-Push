@@ -3230,4 +3230,41 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return $id;
     }
+
+   /**
+     * Saves a copy of a message in the Draft folder
+     *
+     * @access public
+     * @param $finalHeaders     Array of headers
+     * @param $finalBody        Body part
+     * @return boolean          If the message is saved
+     */
+    private function saveDraftMessage($finalHeaders, $finalBody) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveDraftMessage(): saving message in Draft Items folder"));
+
+        $headers = "";
+        foreach ($finalHeaders as $k => $v) {
+            if (strlen($headers) > 0) {
+                $headers .= "\n";
+            }
+            $headers .= "$k: $v";
+        }
+
+        if ($this->draftID === false) {
+            $this->draftID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_DRAFT), false);
+        }
+
+        $saved = false;
+        if ($this->draftID) {
+            $imapid = $this->getImapIdFromFolderId($this->draftID);
+            $saved = $this->addDraftMessage($imapid, $headers, $finalBody);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->saveDraftMessage(): Draft Mail saved in 'Draft' folder '%s' ['%s']", $imapid, $this->draftID));
+        }
+        else {
+            ZLog::Write(LOGLEVEL_ERROR, "BackendIMAP->saveDraftMessage(): The email could not be saved to Draft Items folder. Check your configuration.");
+        }
+        unset($headers);
+
+        return $saved;
+    }    
 };
