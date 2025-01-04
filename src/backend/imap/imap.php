@@ -3203,4 +3203,31 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return $save;
     }    
+
+    /**
+     * Returns most recent draft
+     *
+     * @return string
+     */
+    public function getRecentDraft() {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->returnRecentDraft()"));
+
+        // set draftID if not set 
+        if ($this->draftID === false) {
+            $this->draftID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_DRAFT), false);
+        }
+
+        // Convert draftID to IMAP id
+        $folderId = $this->getImapIdFromFolderId($this->draftID);
+
+        if (@imap_reopen($this->mbox, $this->server . $folderId)) {
+            $subList = @imap_search($this->mbox, 'ALL', SE_UID, IMAP_SEARCH_CHARSET);
+            if ($subList !== false) {
+                $id = end($subList);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->returnRecentDraft: Search in %s", $folderId));
+            }
+        }
+
+        return $id;
+    }
 };
