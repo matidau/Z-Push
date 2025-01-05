@@ -95,7 +95,19 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         //TEST
         $logWbxmlHeaders = "";
         foreach ($this->syncstate as $k => $v) {
-            $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+            if(!is_array($v)) {
+                $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+            }
+            else {
+                foreach ($v as $kk => $vv) {
+                    if(!is_array($vv)) {
+                        $logWbxmlHeaders .= $k . ": " . $kk . ": " . $vv . PHP_EOL;
+                    }
+                    else {
+                        $logWbxmlHeaders .= $k . ": " . $kk . ": " . "Array" . PHP_EOL;
+                    }
+                }
+            }
         }
         ZLog::Write(LOGLEVEL_WARN, $logWbxmlHeaders, false);
         unset($logWbxmlHeaders);        
