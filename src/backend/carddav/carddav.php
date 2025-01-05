@@ -558,6 +558,8 @@ class BackendCardDAV extends BackendDiff implements ISearchProvider {
         else {
             ZLog::Write(LOGLEVEL_WBXML, sprintf("BackendCardDAV->ChangeMessage - vCard\n%s\n", $vcard_text));
 
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendCardDAV->ChangeMessage called"));
+
             $updated = false;
             if (strlen($id) == 0) {
                 //no id, new vcard
