@@ -91,6 +91,16 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
 
         $stat = $this->backend->ChangeMessage($this->folderid, $id, $message, $this->contentparameters);
 
+        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() this->syncstate:"));
+        //TEST
+        $logWbxmlHeaders = "";
+        foreach ($this->syncstate as $k => $v) {
+            $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+        }
+        ZLog::Write(LOGLEVEL_WARN, $logWbxmlHeaders, false);
+        unset($logWbxmlHeaders);        
+        //TEST        
+
         ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() stat:"));
         //TEST
         $logWbxmlHeaders = "";
