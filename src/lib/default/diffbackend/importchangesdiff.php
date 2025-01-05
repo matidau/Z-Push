@@ -91,6 +91,16 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
 
         $stat = $this->backend->ChangeMessage($this->folderid, $id, $message, $this->contentparameters);
 
+        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() stat:"));
+        //TEST
+        $logWbxmlHeaders = "";
+        foreach ($stat as $k => $v) {
+            $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+        }
+        ZLog::Write(LOGLEVEL_WARN, $logWbxmlHeaders, false);
+        unset($logWbxmlHeaders);        
+        //TEST        
+
         if(!is_array($stat))
             throw new StatusException(sprintf("ImportChangesDiff->ImportMessageChange('%s','%s'): unknown error in backend", $id, get_class($message)), SYNC_STATUS_SYNCCANNOTBECOMPLETED);
 
