@@ -1537,7 +1537,7 @@ class Sync extends RequestProcessor {
                             }
 
                             // set the serverid if AS 16.0+ is used
-                            if (Request::GetProtocolVersion() >= 16.0) {
+                            if (Request::GetProtocolVersion() >= 16.0 && ($response instanceof SyncObject)) {
                                 $response->serverid = $serverid;
                             } 
 
