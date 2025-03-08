@@ -1536,8 +1536,11 @@ class Sync extends RequestProcessor {
                                 $response = $this->importer->ImportMessageChange($serverid, $message);
                             }
 
-                            // revert AS16 breaking change  
-                            //$response->serverid = $serverid;
+                            // set the serverid if AS 16.0+ is used
+                            if (Request::GetProtocolVersion() >= 16.0) {
+                                $response->serverid = $serverid;
+                            } 
+
                             $actiondata["modifyids"][$serverid] = $response;
                             $actiondata["statusids"][$serverid] = SYNC_STATUS_SUCCESS;
                         }
