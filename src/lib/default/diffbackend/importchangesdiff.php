@@ -138,7 +138,7 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
             $response = $stat["id"];
         }
 
-        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() response: $s", $response));
+        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() response: %s", $response));
 
         return $response;
     }
