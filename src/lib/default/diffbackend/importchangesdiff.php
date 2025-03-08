@@ -97,7 +97,15 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         // Record the state of the message
         $this->updateState("change", $stat);
 
-        return $stat["id"];
+        if (Request::GetProtocolVersion() >= 16.0) {
+            $response = $this->backend->GetMessage($this->folderid, $stat["id"], $this->contentparameters);
+        } 
+        else {
+            // Return the server id of the message
+            $response = $stat["id"];
+        }
+
+        return $response;
     }
 
     /**
