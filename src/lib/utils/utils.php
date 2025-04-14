@@ -1523,6 +1523,36 @@ class Utils {
         }
         return 0;
     }
+
+    /**
+	 * Returns the appropriate SyncObjectResponse object based on message class.
+	 *
+	 * @param string $messageClass
+	 *
+	 * @return object
+	 */
+	public static function GetResponseFromMessageClass($messageClass) {
+		$messageClass = strtolower($messageClass);
+
+		switch ($messageClass) {
+			case 'syncappointment':
+				return new SyncAppointmentResponse();
+
+			case 'synccontact':
+				return new SyncContactResponse();
+
+			case 'syncnote':
+				return new SyncNoteResponse();
+
+			case 'synctask':
+				return new SyncTaskResponse();
+
+			default:
+				return new SyncMailResponse();
+		}
+
+		return new SyncMailResponse();
+	}
 }
 
 // TODO Win1252/UTF8 functions are deprecated and will be removed sometime
