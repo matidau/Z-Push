@@ -1547,12 +1547,43 @@ class Utils {
 			case 'synctask':
 				return new SyncTaskResponse();
 
-			default:
+			case 'syncmail':
 				return new SyncMailResponse();
+
+			default:
+				return null;
 		}
 
 		return new SyncMailResponse();
 	}
+
+    /**
+	 * Returns a copy to the appropriate SyncObjectResponse object from SyncObject based on the message class.
+	 *
+	 * @param  SyncObject  $message
+	 *
+	 * @return SyncObject
+	 */
+	public static function GetResponseFromObject($message) {
+
+        $messageClass = strtolower(get_class($message));
+
+        $response = GetResponseFromMessageClass($messageClass);
+
+        if ($response === null) {
+            return $message;
+        }
+
+        // Copy the message to the response object
+        foreach ($message as $key => $value) {
+            if (property_exists($response, $key)) {
+                $response->$key = $value;
+            }
+        }
+
+		return $response;
+	}
+
 }
 
 // TODO Win1252/UTF8 functions are deprecated and will be removed sometime
