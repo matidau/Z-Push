@@ -1675,7 +1675,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
         // 'draft'
-        if(!$id) {
+        if(!$id || (isset($message->isdraft) && $message->isdraft)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
             
             $saved = $this->saveDraftMail($message);
