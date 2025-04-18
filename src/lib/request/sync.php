@@ -1541,6 +1541,8 @@ class Sync extends RequestProcessor {
                                 $response->serverid = $serverid;
                             } 
 
+                            ZLog::Write(LOGLEVEL_WARN, sprintf("Sync->importMessage() response: %s", $response));
+
                             $actiondata["modifyids"][$serverid] = $response;
                             $actiondata["statusids"][$serverid] = SYNC_STATUS_SUCCESS;
                         }
