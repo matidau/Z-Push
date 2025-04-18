@@ -1674,6 +1674,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
+        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() message: %s", $message))
+
         // 'draft'
         if(!$id || (isset($message->isdraft) && $message->isdraft)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
