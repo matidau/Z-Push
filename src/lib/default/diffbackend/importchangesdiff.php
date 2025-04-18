@@ -133,6 +133,9 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
             ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() GetProtocolVersion() >= 16.0"));
             $response = $this->backend->GetMessage($this->folderid, $stat["id"], $this->contentparameters);
             $response = Utils::GetResponseFromObject($response);
+            if (property_exists($response, "serverid")) {
+                $response->serverid = $stat["id"];
+            }            
             if (property_exists($response, "hasResponse")) {
                 $response->hasResponse = true;
             }
