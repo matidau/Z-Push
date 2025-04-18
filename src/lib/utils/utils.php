@@ -1568,7 +1568,7 @@ class Utils {
 
         $messageClass = strtolower(get_class($message));
 
-        $response = GetResponseFromMessageClass($messageClass);
+        $response = Utils::GetResponseFromMessageClass($messageClass);
 
         if ($response === null) {
             return $message;
