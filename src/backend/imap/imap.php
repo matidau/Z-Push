@@ -1684,7 +1684,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             // delete previously saved draft
             if ($saved && $id) {
-                $this->DeleteMessage($folderid, $id, $contentparameters);
+                $this->deleteDraftMessage($folderid, $id, $contentparameters);
             }
             
             if ($saved) {
@@ -3289,5 +3289,30 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $header_body = str_replace("\n", "\r\n", str_replace("\r", "", $header . "\n\n" . $body));
 
         return @imap_append($this->mbox, $this->server . $folderid, $header_body, "\\Seen");
+    }    
+
+    /**
+     * Called when the user has requested to delete (really delete) a message
+     *
+     * @param string              $folderid             id of the folder
+     * @param string              $id                   id of the message
+     * @param ContentParameters   $contentparameters
+     *
+     * @access public
+     * @return boolean                      status of the operation
+     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+     */
+    public function deleteDraftMessage($folderid, $id) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->deleteDraftMessage('%s','%s')", $folderid, $id));
+
+        $folderImapid = $this->getImapIdFromFolderId($folderid);
+        $this->imap_reopen_folder($folderImapid);
+
+        $s1 = @imap_delete ($this->mbox, $id, FT_UID);
+        $s11 = @imap_setflag_full($this->mbox, $id, "\\Deleted", FT_UID);
+        $s2 = @imap_expunge($this->mbox);
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->deleteDraftMessage('%s','%s'): result: s-delete: '%s' s-expunge: '%s' setflag: '%s'", $folderid, $id, $s1, $s2, $s11));
+
+        return ($s1 && $s2 && $s11);
     }    
 };
