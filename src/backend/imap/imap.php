@@ -1677,7 +1677,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() message: %s", $message));
 
         // 'draft'
-        if(!$id) {
+        if(!$id || (isset($message->isdraft) && $message->isdraft)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
             
             $saved = $this->saveDraftMail($message);
