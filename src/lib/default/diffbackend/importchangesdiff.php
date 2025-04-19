@@ -89,6 +89,8 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
                 throw new StatusException(sprintf("ImportChangesDiff->ImportMessageChange('%s','%s'): Conflict detected. Data from PIM will be dropped! Server overwrites PIM. User is informed.", $id, get_class($message)), SYNC_STATUS_CONFLICTCLIENTSERVEROBJECT, null, LOGLEVEL_INFO);
         }
 
+        ZLog::Write(LOGLEVEL_WARN, sprintf("ImportChangesDiff->ImportMessageChange() folderid: %s", $this->folderid));
+
         //set isdraft if folderid is drafts
         if($this->folderid == SYNC_FOLDER_TYPE_DRAFTS) {
             $message->isdraft = true;
