@@ -1682,6 +1682,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             
             $saved = $this->saveDraftMail($message);
 
+            // delete previously saved draft
+            if ($saved && $id) {
+                $this->DeleteMessage($folderid, $id, $contentparameters);
+            }
+            
             if ($saved) {
                 $id = $this->getRecentDraft();
             }
