@@ -1681,12 +1681,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
             
             $saved = $this->saveDraftMail($message);
-            
-            // delete previously saved draft
-            if ($saved && $id) {
-                DeleteMessage($folderid, $id, $contentparameters);
-            }
-            
+
             if ($saved) {
                 $id = $this->getRecentDraft();
             }
