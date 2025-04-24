@@ -1700,7 +1700,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save existing Draft"));
             
             // get draftMessageId if id is stored in X-Z-Push-draft-message-id header
-            $draftMessageId = $this->getDraftMessageId($folderid, $id)
+            $draftMessageId = $this->getDraftMessageId($folderid, $id);
 
             $saved = $this->saveDraftMail($id, $message);
 
