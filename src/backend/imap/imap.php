@@ -1117,7 +1117,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 // 'draft'
-                $isdraftfolder = ($this->GetFolder($this->getFolderIdFromImapId($folderid))->type === SYNC_FOLDER_TYPE_DRAFTS);
+                $isdraftfolder = (isDraftFolder($this->getFolderIdFromImapId($folderid)));
 
                 if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
                     $message["draft"] = 1;
@@ -1151,6 +1151,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $folderImapid = $this->getImapIdFromFolderId($folderid);
 
         $is_sent_folder = strcasecmp($folderImapid, $this->create_name_folder(IMAP_FOLDER_SENT)) == 0;
+
+        // get draftid if id is stored in X-Z-Push-draft-message-id header
+        $id = $this->getDraftMessageId($folderid, $id);        
 
         // Get flags, etc
         $stat = $this->StatMessage($folderid, $id);
@@ -1588,6 +1591,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->StatMessage('%s','%s')", $folderid, $id));
         $folderImapid = $this->getImapIdFromFolderId($folderid);
 
+        // get draftid if id is stored in X-Z-Push-draft-message-id header
+        $id = $this->getDraftMessageId($folderid, $id);        
+
         $this->imap_reopen_folder($folderImapid);
         $overview = @imap_fetch_overview($this->mbox, $id, FT_UID);
 
@@ -1645,9 +1651,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // 'draft'
-        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
-
-        if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
+        if ((isset($overview->draft) && $overview->draft) || isDraftFolder($folderid)) {
             $entry["draft"] = 1;
         }
         else {
@@ -1674,21 +1678,35 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
-        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
-
-        // 'draft'
-        if(!$id || $isdraftfolder) {
-            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
+        // new 'draft'
+        if(!$id) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save new Draft"));
             
-            $saved = $this->saveDraftMail($message);
+            $saved = $this->saveDraftMail($id, $message);
 
-            // delete previously saved draft
-            if ($saved && $id) {
-                $this->deleteDraftMessage($folderid, $id, $contentparameters);
-            }
-            
+            // delete saved draft and resave to set header X-Z-Push-draft-message-id
             if ($saved) {
                 $id = $this->getRecentDraft();
+                $saved = $this->saveDraftMail($id, $message);
+            }
+
+            // if resave is successful, delete the previous draft
+            if ($saved) {
+                $this->deleteDraftMessage($folderid, $id);
+            }
+        }
+        // existing 'draft'
+        else if(isDraftFolder($folderid)) {
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save existing Draft"));
+            
+            // get draftMessageId if id is stored in X-Z-Push-draft-message-id header
+            $draftMessageId = $this->getDraftMessageId($folderid, $id)
+
+            $saved = $this->saveDraftMail($id, $message);
+
+            // delete previously saved draft
+            if ($saved) {
+                $this->deleteDraftMessage($folderid, $draftMessageId);
             }
         }
 
@@ -1741,6 +1759,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $folderImapid = $this->getImapIdFromFolderId($folderid);
         $this->imap_reopen_folder($folderImapid);
 
+        // get draftid if id is stored in X-Z-Push-draft-message-id header
+        $id = $this->getDraftMessageId($folderid, $id);        
+
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
             if ($flags == 0) {
                 // set as "Unseen" (unread)
@@ -1770,6 +1791,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      */
     public function DeleteMessage($folderid, $id, $contentparameters) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->DeleteMessage('%s','%s')", $folderid, $id));
+
+        // get draftid if id is stored in X-Z-Push-draft-message-id header
+        $id = $this->getDraftMessageId($folderid, $id);        
 
         $folderImapid = $this->getImapIdFromFolderId($folderid);
         if (strcasecmp($folderImapid, $this->create_name_folder(IMAP_FOLDER_TRASH)) != 0) {
@@ -1813,6 +1837,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $this->imap_reopen_folder($folderImapid);
+
+        // get draftid if id is stored in X-Z-Push-draft-message-id header
+        $id = $this->getDraftMessageId($folderid, $id);        
 
         if ($this->imap_inside_cutoffdate(Utils::GetCutOffDate($contentparameters->GetFilterType()), $id)) {
             // read message flags
@@ -3047,7 +3074,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      * @throws StatusException
      */
-    public function saveDraftMail($sm) {
+    public function saveDraftMail($id, $sm) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): We get the new message"));
 
         // build basic message,  set from header and body
@@ -3144,6 +3171,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (defined('IMAP_RECEIVED') && IMAP_RECEIVED)
             $message->headers["received"] = "from " . Request::GetRemoteAddr() . " by " . gethostname() . " (Z-Push); " . $message->headers["date"];
 
+        if(isset($id)) {
+            $message->headers["X-Z-Push-draft-message-id"] = $id;
+        }
+
         $finalBody = "";
         $finalHeaders = array();
 
@@ -3207,6 +3238,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         unset($finalHeaders);
         unset($finalBody);
+
+        if ($save) {
+            $save = $id;
+        }
 
         return $save;
     }    
@@ -3296,7 +3331,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      *
      * @param string              $folderid             id of the folder
      * @param string              $id                   id of the message
-     * @param ContentParameters   $contentparameters
      *
      * @access public
      * @return boolean                      status of the operation
@@ -3315,4 +3349,55 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return ($s1 && $s2 && $s11);
     }    
+
+    /**
+     * Get draftid if id is stored in X-Z-Push-draft-message-id header
+     *
+     * @param string              $folderid             id of the folder
+     * @param string              $id                   id of the message
+     *
+     * @access public
+     * @return string                       id of draft message
+     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+     */
+    public function getDraftMessageId($folderid, $id) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getDraftMessageId('%s','%s')", $folderid, $id));
+
+        $returnid = $id;
+        $messages[] = array();
+
+        if (isDraftFolder($folderid)) {
+            $messages = $this->GetMessageList($folderid, 0);
+
+            foreach($messages as $message) {
+            
+                $header = @imap_fetchheader($this->mbox, $id, FT_UID);
+                $headers = preg_split("/\r\n|\n|\r/", $header);
+
+                if (isset(headers["X-Z-Push-draft-message-id"]) && headers["X-Z-Push-draft-message-id"] == $id) {
+                    $returnid = $message->id;
+                    break;
+                }
+            }
+            
+        }
+
+        return ($returnid);
+    }     
+    /**
+     * Check if folder is the drafts folder
+     *
+     * @param string              $folderid             id of the folder
+     * @param string              $id                   id of the message
+     *
+     * @access public
+     * @return boolean                      if draft folder
+     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+     */
+    public function isDraftFolder($folderid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->isDraftFolder('%s')", $folderid));
+
+        return ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+    }         
+ 
 };
