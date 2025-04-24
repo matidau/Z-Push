@@ -1694,22 +1694,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save new Draft"));
             
             $saved = $this->saveDraftMail($id, $message);
-            ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() id 1: %s", $id));
-            ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() saved 1: %s", $saved));
 
             // resave to set header X-Z-Push-draft-message-id
             if ($saved) {
                 $id = $saved;
                 $saved = $this->saveDraftMail($id, $message);
-                ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() id 2: %s", $id));
-                ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() saved 2: %s", $saved));
             }
 
             // if resave is successful, delete the previous draft
             if ($saved) {
                 $this->deleteDraftMessage($folderid, $id);
-                ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() id 3: %s", $id));
-                ZLog::Write(LOGLEVEL_warn, sprintf("BackendIMAP->ChangeMessage() saved 3: %s", $saved));
             }
         }
         // existing 'draft'
