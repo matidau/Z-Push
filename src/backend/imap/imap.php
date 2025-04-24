@@ -3386,12 +3386,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if ($this->isDraftFolder($folderid) && !empty($id)) {
             $messages = $this->GetMessageList($folderid, 0);
 
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getDraftMessageId() id: %s", $id));
-
             foreach($messages as $message) {
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getDraftMessageId() message->id: %s", $message->id));
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getDraftMessageId() draftMessageId->id: %s", $message->draftMessageId));
-
                 if (isset($message['draftMessageId']) && $message['draftMessageId'] == $id) {
                     $returnid = $message['id'];
                     break;
