@@ -3374,7 +3374,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $header = @imap_fetchheader($this->mbox, $id, FT_UID);
                 $headers = preg_split("/\r\n|\n|\r/", $header);
 
-                if (isset(headers["X-Z-Push-draft-message-id"]) && headers["X-Z-Push-draft-message-id"] == $id) {
+                if (isset($headers["X-Z-Push-draft-message-id"]) && $headers["X-Z-Push-draft-message-id"] == $id) {
                     $returnid = $message->id;
                     break;
                 }
