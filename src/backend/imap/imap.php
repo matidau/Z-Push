@@ -1121,9 +1121,20 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
                 if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
                     $message["draft"] = 1;
+
+                    // set the draftMessageId from X-Z-Push-draft-message-id
+                    $header = @imap_fetchheader($this->mbox, $overview->uid, FT_UID);
+                    $headers = preg_split("/\r\n|\n|\r/", $header);
+                    foreach ($headers as $header) {
+                        if (preg_match("/X-Z-Push-draft-message-id: (.*)/", $header, $matches)) {
+                            $draftMessageId = trim($matches[1]);
+                            $message["draftMessageId"] = $draftMessageId;
+                        }
+                    }
                 }
                 else {
                     $message["draft"] = 0;
+                    $message["draftMessageId"] = null;
                 }
 
                 $messages[] = $message;
@@ -3376,10 +3387,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $messages = $this->GetMessageList($folderid, 0);
 
             foreach($messages as $message) {
-            
-                $header = @imap_fetchheader($this->mbox, $id, FT_UID);
-                $headers = preg_split("/\r\n|\n|\r/", $header);
-                if (in_array("X-Z-Push-draft-message-id: " . $id, $headers)) {
+                if (isset($message->draftMessageId) && $message->draftMessageId == $id) {
                     $returnid = $message->id;
                     break;
                 }
