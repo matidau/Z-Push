@@ -1117,7 +1117,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 // 'draft'
-                $isdraftfolder = (isDraftFolder($this->getFolderIdFromImapId($folderid)));
+                $isdraftfolder = ($this->isDraftFolder($this->getFolderIdFromImapId($folderid)));
 
                 if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
                     $message["draft"] = 1;
@@ -1651,7 +1651,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // 'draft'
-        if ((isset($overview->draft) && $overview->draft) || isDraftFolder($folderid)) {
+        if ((isset($overview->draft) && $overview->draft) || $this->isDraftFolder($folderid)) {
             $entry["draft"] = 1;
         }
         else {
@@ -1696,7 +1696,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
         }
         // existing 'draft'
-        else if(isDraftFolder($folderid)) {
+        else if($this->isDraftFolder($folderid)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save existing Draft"));
             
             // get draftMessageId if id is stored in X-Z-Push-draft-message-id header
@@ -3366,7 +3366,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $returnid = $id;
         $messages[] = array();
 
-        if (isDraftFolder($folderid)) {
+        if ($this->isDraftFolder($folderid)) {
             $messages = $this->GetMessageList($folderid, 0);
 
             foreach($messages as $message) {
