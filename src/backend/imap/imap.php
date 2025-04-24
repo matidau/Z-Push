@@ -3171,7 +3171,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (defined('IMAP_RECEIVED') && IMAP_RECEIVED)
             $message->headers["received"] = "from " . Request::GetRemoteAddr() . " by " . gethostname() . " (Z-Push); " . $message->headers["date"];
 
-        if(isset($id)) {
+        if(!empty($id)) {
             $message->headers["X-Z-Push-draft-message-id"] = $id;
         }
 
