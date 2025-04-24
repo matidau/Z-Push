@@ -3366,7 +3366,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $returnid = $id;
         $messages[] = array();
 
-        if ($this->isDraftFolder($folderid)) {
+        if ($this->isDraftFolder($folderid) && !empty($id)) {
             $messages = $this->GetMessageList($folderid, 0);
 
             foreach($messages as $message) {
