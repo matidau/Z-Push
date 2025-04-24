@@ -1684,9 +1684,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             
             $saved = $this->saveDraftMail($id, $message);
 
-            // delete saved draft and resave to set header X-Z-Push-draft-message-id
+            // resave to set header X-Z-Push-draft-message-id
             if ($saved) {
-                $id = $this->getRecentDraft();
+                $id = $saved;
                 $saved = $this->saveDraftMail($id, $message);
             }
 
@@ -3239,11 +3239,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         unset($finalHeaders);
         unset($finalBody);
 
-        if ($save) {
-            $save = $id;
+        $draftMessageId = false;
+
+        if ($save && !empty($id)) {
+            $draftMessageId = $id;
         }
 
-        return $save;
+        if ($save && empty($id)) {
+            $draftMessageId = $this->getRecentDraft();
+        }        
+
+        return $draftMessageId;
     }    
 
     /**
