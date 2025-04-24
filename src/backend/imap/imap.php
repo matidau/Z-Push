@@ -3388,6 +3388,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
             foreach($messages as $message) {
                 if (isset($message['draftMessageId']) && $message['draftMessageId'] == $id) {
+                    ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getDraftMessageId() message id: %s", $message['id']));
+                    ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->getDraftMessageId() message draftMessageId : %s", $message['draftMessageId']));
+    
                     $returnid = $message['id'];
                     break;
                 }
