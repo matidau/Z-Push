@@ -3245,20 +3245,25 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             unset($logWbxmlBody);
         }
 
+        $draftMessageId = false;
+
         $save = $this->saveDraftMessage($finalHeaders, $finalBody);
 
-        unset($finalHeaders);
-        unset($finalBody);
-
-        $draftMessageId = false;
+        // add X-Z-Push-draft-message-id and resave
+        if ($save && empty($id)) {
+            $id = $this->getRecentDraft();
+            // $finalHeaders["X-Z-Push-draft-message-id"] = $id;
+            // $save = $this->saveDraftMessage($finalHeaders, $finalBody);
+            
+        }     
 
         if ($save && !empty($id)) {
             $draftMessageId = $id;
         }
+   
 
-        if ($save && empty($id)) {
-            $draftMessageId = $this->getRecentDraft();
-        }        
+        unset($finalHeaders);
+        unset($finalBody);        
 
         return $draftMessageId;
     }    
