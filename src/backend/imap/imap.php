@@ -1117,7 +1117,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 }
 
                 // 'draft'
-                $isdraftfolder = ($this->GetFolder($this->getFolderIdFromImapId($imapid))->type === SYNC_FOLDER_TYPE_DRAFTS);
+                $isdraftfolder = ($this->isDraftFolder($folderid));
 
                 if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
                     $message["draft"] = 1;
@@ -1645,7 +1645,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // 'draft'
-        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+        $isdraftfolder = ($this->isDraftFolder($folderid));
 
         if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
             $entry["draft"] = 1;
@@ -3315,4 +3315,21 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         return ($s1 && $s2 && $s11);
     }    
+
+    /**
+     * Check if folder is the drafts folder
+     *
+     * @param string              $folderid             id of the folder
+     * @param string              $id                   id of the message
+     *
+     * @access public
+     * @return boolean                      if draft folder
+     * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
+     */
+    public function isDraftFolder($folderid) {
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->isDraftFolder('%s')", $folderid));
+
+        return ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+    }
+
 };
