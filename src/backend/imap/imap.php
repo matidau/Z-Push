@@ -1685,34 +1685,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // 'draft'
         if(!$id || $isdraftfolder) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() id: %s", $id));
 
-            // set previous uid for existing draft
-            if ($id) {
-                $prevuid = $this->getUidFromId($folderid, $id);
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
+            $id = $this->saveDraftMail($id, $message);
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() saved id: %s", $id));
+
+            if ($id == false) {
+                return false;
             }
-            
-            $saved = $this->saveDraftMail($id, $message);
-            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() saved: %s", $saved));
-
-            // for new draft set uid and id then resave to set header X-Z-Push-draft-message-id
-            if (!$id && $saved) {
-                $prevuid = $this->getRecentDraft();
-                $id = $prevuid;
-                $saved = $this->saveDraftMail($id, $message);
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage(): Resave Draft"));
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() id: %s", $id));
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() saved: %s", $saved));
-            }
-
-            // if save is successful, delete the previous draft
-            if ($saved) {
-                $this->deleteDraftMessage($imapid, $prevuid);
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage(): Delete Draft"));
-                ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
-            }            
+   
         }
 
         if (isset($message->flag)) {
@@ -3235,7 +3215,55 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             unset($logWbxmlBody);
         }
 
+        // set draftID if not set 
+        if ($this->draftID === false) {
+            $this->draftID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_DRAFT), false);
+        }
+
+        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() id: %s", $id));
+
+        // set previous uid for existing draft
+        if ($id) {
+            $prevuid = $this->getUidFromId($this->draftID, $id);
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() prevuid: %s", $prevuid));
+        }
+        
         $save = $this->saveDraftMessage($finalHeaders, $finalBody);
+        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() save: %s", $save));
+
+        // for new draft set uid and id then resave to set header X-Z-Push-draft-message-id
+        if (!$id && $save) {
+            $prevuid = $this->getRecentDraft();
+            $id = $prevuid;
+            $finalHeaders["X-Z-Push-draft-message-id"] = $id;
+            $save = $this->saveDraftMessage($finalHeaders, $finalBody);
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail(): Resave Draft"));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() prevuid: %s", $prevuid));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() id: %s", $id));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() saved: %s", $save));
+        }
+
+        // if save is successful, delete the previous draft
+        if ($save) {
+            $save = $id;
+            $this->deleteDraftMessage($this->draftID, $prevuid);
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail(): Delete Draft"));
+            ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() prevuid: %s", $prevuid));
+        }
+        
+            $logWbxmlHeaders = "";
+            foreach ($finalHeaders as $k => $v) {
+                $logWbxmlHeaders .= $k . ": " . $v . PHP_EOL;
+            }
+            ZLog::Write(LOGLEVEL_WARN, $logWbxmlHeaders, false);
+            unset($logWbxmlHeaders);
+
+            $logWbxmlBody = "";
+            foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline) {
+                $logWbxmlBody .= "Body: " . $bodyline . PHP_EOL;
+            }
+            ZLog::Write(LOGLEVEL_WARN, $logWbxmlBody, false);
+            unset($logWbxmlBody);
 
         unset($finalHeaders);
         unset($finalBody);
