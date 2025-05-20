@@ -1678,6 +1678,8 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('%s','%s','%s')", $folderid, $id, get_class($message)));
         // TODO this could throw several StatusExceptions like e.g. SYNC_STATUS_OBJECTNOTFOUND, SYNC_STATUS_SYNCCANNOTBECOMPLETED
 
+        $imapid = $this->getImapIdFromFolderId($folderid);
+
         $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
 
         // 'draft'
@@ -1707,7 +1709,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         if (isset($message->flag)) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage('Setting flag')"));
 
-            $imapid = $this->getImapIdFromFolderId($folderid);
             $uid = $this->getUidFromId($folderid, $id);
             $this->imap_reopen_folder($imapid);
 
@@ -3325,7 +3326,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @throws StatusException              could throw specific SYNC_STATUS_* exceptions
      */
     public function deleteDraftMessage($imapid, $uid) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->deleteDraftMessage('%s','%s')", $folderid, $id));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->deleteDraftMessage('%s','%s')", $imapid, $uid));
 
         $this->imap_reopen_folder($imapid);
 
@@ -3398,7 +3399,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $id = $uid;
 
-        $isdraftfolder = ($this->isDraftFolder(getFolderIdFromImapId($imapid)));
+        $isdraftfolder = ($this->isDraftFolder($this->getFolderIdFromImapId($imapid)));
 
         if ($isdraftfolder && !empty($uid)) {
 
