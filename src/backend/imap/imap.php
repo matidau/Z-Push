@@ -3109,7 +3109,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $mimedata = $mimedata . "\n";
         $mimedata = $mimedata . "\n" . $body;
 
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): mimedata \n%s", $mimedata));
+        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SaveDraftMail(): mimedata \n%s", $mimedata));
 
         $mobj = new Mail_mimeDecode($mimedata);
         $message = $mobj->decode(array('decode_headers' => 'utf-8', 'decode_bodies' => true, 'include_bodies' => true, 'rfc_822bodies' => true, 'charset' => 'utf-8'));
@@ -3257,13 +3257,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
             ZLog::Write(LOGLEVEL_WARN, $logWbxmlHeaders, false);
             unset($logWbxmlHeaders);
-
-            $logWbxmlBody = "";
-            foreach (preg_split("/((\r)?\n)/", $finalBody) as $bodyline) {
-                $logWbxmlBody .= "Body: " . $bodyline . PHP_EOL;
-            }
-            ZLog::Write(LOGLEVEL_WARN, $logWbxmlBody, false);
-            unset($logWbxmlBody);
 
         unset($finalHeaders);
         unset($finalBody);
