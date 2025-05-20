@@ -1685,24 +1685,33 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // 'draft'
         if(!$id || $isdraftfolder) {
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Save Draft"));
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() id: %s", $id));
 
             // set previous uid for existing draft
             if ($id) {
                 $prevuid = $this->getUidFromId($folderid, $id);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
             }
             
             $saved = $this->saveDraftMail($id, $message);
+            ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() saved: %s", $saved));
 
             // for new draft set uid and id then resave to set header X-Z-Push-draft-message-id
             if (!$id && $saved) {
                 $prevuid = $this->getRecentDraft();
                 $id = $prevuid;
                 $saved = $this->saveDraftMail($id, $message);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Resave Draft"));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() id: %s", $id));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() saved: %s", $saved));
             }
 
             // if save is successful, delete the previous draft
             if ($saved) {
                 $this->deleteDraftMessage($imapid, $prevuid);
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage(): Delete Draft"));
+                ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->ChangeMessage() prevuid: %s", $prevuid));
             }            
         }
 
