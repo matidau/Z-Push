@@ -3065,7 +3065,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      * @throws StatusException
      */
-    public function saveDraftMail($sm) {
+    public function saveDraftMail($id, $sm) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): We get the new message"));
 
         // build basic message,  set from header and body
@@ -3161,6 +3161,10 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         if (defined('IMAP_RECEIVED') && IMAP_RECEIVED)
             $message->headers["received"] = "from " . Request::GetRemoteAddr() . " by " . gethostname() . " (Z-Push); " . $message->headers["date"];
+
+        if(!empty($id)) {
+            $message->headers["X-Z-Push-draft-message-id"] = $id;
+        }
 
         $finalBody = "";
         $finalHeaders = array();
