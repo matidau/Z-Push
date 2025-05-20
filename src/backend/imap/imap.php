@@ -2547,7 +2547,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return boolean
      */
     private function imap_inside_cutoffdate($cutoffdate, $uid) {
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Checking if the messages is withing the cutoffdate %d, %s", $cutoffdate, $id));
+        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->imap_inside_cutoffdate(): Checking if the messages is withing the cutoffdate %d, %s", $cutoffdate, $uid));
         $is_inside = false;
 
         if ($cutoffdate == 0) {
