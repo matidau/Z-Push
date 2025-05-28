@@ -1573,8 +1573,7 @@ class Sync extends RequestProcessor {
                             $actiondata["clientids"][$clientid] = false;
                             ZLog::Write(LOGLEVEL_WARN, sprintf("Sync->importMessage() ADD clientid: %s", $clientid));
                             ZLog::Write(LOGLEVEL_WARN, sprintf("Sync->importMessage() ADD serverid: %s", $serverid));
-                            $response = $this->importer->ImportMessageChange(false, $message);
-                            $actiondata["clientids"][$clientid] = $response->serverid;
+                            $actiondata["clientids"][$clientid] = $this->importer->ImportMessageChange(false, $message);
                             $actiondata["statusids"][$clientid] = SYNC_STATUS_SUCCESS;
                         }
                     }
