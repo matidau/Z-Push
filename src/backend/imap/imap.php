@@ -3221,6 +3221,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $this->draftID = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_DRAFT), false);
         }
 
+        // Convert draftID to IMAP id
+        $imapid = $this->getImapIdFromFolderId($this->draftID);
+
         ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() id: %s", $id));
 
         // set previous uid for existing draft
@@ -3247,7 +3250,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // if save is successful, delete the previous draft
         if ($save) {
             $save = $id;
-            $this->deleteDraftMessage($this->draftID, $prevuid);
+            $this->deleteDraftMessage($imapid, $prevuid);
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail(): Delete Draft"));
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() this->draftID: %s", $this->draftID));
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() prevuid: %s", $prevuid));
@@ -3333,17 +3336,17 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     /**
      * Adds a message with draft and seen flag to a specified folder (used for saving draft items)
      *
-     * @param string        $folderid       id of the folder
+     * @param string        $imapid       id of the folder
      * @param string        $header         header of the message
      * @param long          $body           body of the message
      *
      * @access protected
      * @return boolean      status
      */
-    protected function addDraftMessage($folderid, $header, $body) {
+    protected function addDraftMessage($imapid, $header, $body) {
         $header_body = str_replace("\n", "\r\n", str_replace("\r", "", $header . "\n\n" . $body));
 
-        return @imap_append($this->mbox, $this->server . $folderid, $header_body, "\\Seen");
+        return @imap_append($this->mbox, $this->server . $imapid, $header_body, "\\Seen");
     }    
 
     /**
