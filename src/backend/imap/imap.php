@@ -3246,7 +3246,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // if save is successful, delete the previous draft
         if ($save) {
             $save = $id;
-            //$this->deleteDraftMessage($this->draftID, $prevuid);
+            $this->deleteDraftMessage($this->draftID, $prevuid);
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail(): Delete Draft"));
             ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->saveDraftMail() prevuid: %s", $prevuid));
         }
