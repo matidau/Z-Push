@@ -3075,7 +3075,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         $contenttype = 'text/plain';
-        if(isset($sm->asbody->type) {
+        if(isset($sm->asbody->type)) {
             switch ($sm->asbody->type) {
                 case SYNC_BODYPREFERENCE_UNDEFINED:
                     $contenttype = 'application/octet-stream';
@@ -3099,7 +3099,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         
         $body = ''
-        if(isset($sm->asbody->data) {
+        if(isset($sm->asbody->data)) {
             $body = stream_get_contents($sm->asbody->data);
         }        
 
