@@ -3098,7 +3098,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             }
         }
         
-        $body = ''
+        $body = '';
         if(isset($sm->asbody->data)) {
             $body = stream_get_contents($sm->asbody->data);
         }        
