@@ -93,7 +93,7 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         //set isdraft and isdraftfolder if folder is drafts
         if($this->$isdraftfolder === null) {
             $folder = $this->backend->GetFolder($this->folderid);
-            $this->$isdraftfolder = ($folder->type == SYNC_FOLDER_TYPE_DRAFTS)
+            $this->$isdraftfolder = ($folder->type == SYNC_FOLDER_TYPE_DRAFTS);
         }
         if($this->$isdraftfolder) {
             $message->isdraft = true;
