@@ -3124,7 +3124,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
             $mimedata = $body;
         }
 
-        ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->SaveDraftMail(): mimedata \n%s", $mimedata));
+        ZLog::Write(LOGLEVEL_WARN, sprintf("BackendIMAP->SaveDraftMail(): mimedata \n%s", $mimedata));
 
         $mobj = new Mail_mimeDecode($mimedata);
         $message = $mobj->decode(array('decode_headers' => 'utf-8', 'decode_bodies' => true, 'include_bodies' => true, 'rfc_822bodies' => true, 'charset' => 'utf-8'));
