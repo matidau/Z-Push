@@ -112,7 +112,7 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         if (property_exists($response, "serverid")) {
             $response->serverid = $stat["id"];
         }            
-        if (property_exists($response, "hasResponse")) {
+        if (($response instanceof SyncAppointmentResponse) && !empty($message->clientuid)) {
             $response->hasResponse = true;
         }
 
