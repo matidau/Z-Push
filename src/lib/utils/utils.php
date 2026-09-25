@@ -1584,6 +1584,34 @@ class Utils {
 		return $response;
 	}
 
+    /**
+	 * Returns the client UID from a MIME stream. Needed for iPhone drafts.
+	 *
+	 * @param  resource  $bodydata
+	 *
+	 * @return string|false
+	 */
+    public static function GetClientUidFromMime($bodydata) {
+        
+        if (!is_resource($bodydata)) {
+            return false;
+        }
+
+        // read body stream, rewind it and mime decode it
+        $mime = stream_get_contents($bodydata);
+        rewind($bodydata);
+        $mobj = new Mail_mimeDecode($mime);
+        $message = $mobj->decode(array('decode_headers' => 'utf-8', 'include_bodies' => false, 'charset' => 'utf-8'));
+        unset($mobj);
+
+        // get the id from headers
+        $clientUid = false;
+        if (isset($message->headers["x-universally-unique-identifier"])) {
+            $clientUid = $message->headers["x-universally-unique-identifier"];
+        }
+        return $clientUid;
+    }
+
 }
 
 // TODO Win1252/UTF8 functions are deprecated and will be removed sometime
