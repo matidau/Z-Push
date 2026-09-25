@@ -3408,7 +3408,6 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
 
         // collect first, delete afterwards - deleteDraftMessage() expunges on every call
-        $todelete = array();
         foreach ($uids as $uid) {
             if ($uid == $excludeid) {
                 continue;
