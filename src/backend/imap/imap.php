@@ -3388,12 +3388,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      *
      * @param string        $imapid         imap id of the folder
      * @param string        $uniqueid       client unique identifier to match
-     * @param string|bool   $excludeid      (opt) uid to keep - normally the copy just appended
+     * @param string   $excludeid      (opt) uid to keep - normally the copy just appended
      *
      * @access protected
      * @return boolean                      true if every matched message was deleted
      */
-    protected function deleteDraftMessagesByUniqueId($imapid, $uniqueid, $excludeid = false) {
+    protected function deleteDraftMessagesByUniqueId($imapid, $uniqueid, $excludeid) {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->deleteDraftMessagesByUniqueId('%s','%s','%s')", $imapid, $uniqueid, Utils::PrintAsString($excludeid)));
 
         if (!$this->isDraftFolder($this->getFolderIdFromImapId($imapid))) {
@@ -3410,10 +3410,11 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         // collect first, delete afterwards - deleteDraftMessage() expunges on every call
         $todelete = array();
         foreach ($uids as $uid) {
-            if ($excludeid !== false && $uid == $excludeid) {
+            if ($uid == $excludeid) {
                 continue;
             }
-
+            
+            $header = @imap_fetchheader($this->mbox, $uid, FT_UID);
             $headers = preg_split("/\r\n|\n|\r/", $header);
             foreach ($headers as $headerline) {
                 if (preg_match("/^X-Universally-Unique-Identifier:\s*" . preg_quote($uniqueid, "/") . "\s*$/i", $headerline)) {
