@@ -59,6 +59,7 @@ class SyncParameters extends StateObject {
                                     'folderstat' => false,
                                     'folderstattimeout' => false,
                                     'movestate' => false,
+                                    'clientuidmap' => array(),
                                 );
 
     /**

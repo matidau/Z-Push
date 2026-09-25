@@ -1569,6 +1569,35 @@ class Sync extends RequestProcessor {
                             $actiondata["clientids"][$clientid] = false;
                             $actiondata["statusids"][$clientid] = SYNC_STATUS_CLIENTSERVERCONVERSATIONERROR;
                         }
+                        // A client (iPhone) may re-Add an item it already created, asserting its own stable object id.
+                        else if ( Request::GetProtocolVersion() >= 16.0 &&
+                                $message instanceof SyncMail &&
+                                isset($message->asbody->type) && 
+                                $message->asbody->type == SYNC_BODYPREFERENCE_MIME &&
+                                isset($message->asbody->data) &&
+                                self::$deviceManager->GetFolderTypeFromCacheById($spa->GetFolderId()) == SYNC_FOLDER_TYPE_DRAFTS) {
+                            $actiondata["clientids"][$clientid] = false;
+
+                            $serverid = false;
+                            $clientuid = Utils::GetClientUidFromMime($message->asbody->data);
+                            $map = $spa->GetClientUidMap(array());
+                            if ($clientuid !== false && isset($map[$clientuid])) {
+                                $serverid = $map[$clientuid];
+                                ZLog::Write(LOGLEVEL_DEBUG, sprintf("Sync->importMessage(): client uid '%s' is known as id '%s' - importing Add as a change", $clientuid, $serverid));
+                            }
+
+                            $response = $this->importer->ImportMessageChange($serverid, $message);
+                            $actiondata["clientids"][$clientid] = $response;
+                            $actiondata["statusids"][$clientid] = SYNC_STATUS_SUCCESS;
+
+                            // remember the pairing for the next edit
+                            if ($clientuid !== false && !empty($response->serverid)) {
+                                $map = $spa->GetClientUidMap(array());
+                                $map[$clientuid] = (string) $response->serverid;
+                                $spa->SetClientUidMap($map);
+                            }                            
+                        }
+                        // default import
                         else {
                             $actiondata["clientids"][$clientid] = false;
                             $actiondata["clientids"][$clientid] = $this->importer->ImportMessageChange(false, $message);
