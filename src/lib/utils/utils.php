@@ -1605,11 +1605,11 @@ class Utils {
         unset($mobj);
 
         // get the id from headers
-        $clientUid = false;
+        $clientuid = false;
         if (isset($message->headers["x-universally-unique-identifier"])) {
-            $clientUid = $message->headers["x-universally-unique-identifier"];
+            $clientuid = $message->headers["x-universally-unique-identifier"];
         }
-        return $clientUid;
+        return $clientuid;
     }
 
 }
