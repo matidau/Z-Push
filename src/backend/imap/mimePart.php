@@ -339,13 +339,6 @@ class Mail_mimePart
 
         } else if ($this->_body) {
             $encoded['body'] = $this->_getEncodedData($this->_body, $this->_encoding);
-        } else if ($this->_body_file) {
-            // magic_quotes_runtime is deprecated and removing in upgrade to PHP 8.3
-
-            if ($this->_isError($body)) {
-                return $body;
-            }
-            $encoded['body'] = $body;
         } else {
             $encoded['body'] = '';
         }
@@ -380,8 +373,6 @@ class Mail_mimePart
             $err = $this->_raiseError('Unable to open file: ' . $filename);
             return $err;
         }
-
-        // magic_quotes_runtime is deprecated and removing in upgrade to PHP 8.3
 
         $res = $this->_encodePartToFile($fh, $boundary, $skip_head);
 
