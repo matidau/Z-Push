@@ -762,7 +762,7 @@ if (! \function_exists('imap_rfc822_parse_headers'))
 
 if (! \function_exists('imap_rfc822_write_address'))
   {
-  function imap_rfc822_write_address(string $mailbox, string $hostname, string $personal) : string
+  function imap_rfc822_write_address(?string $mailbox, ?string $hostname, ?string $personal) : string
 		{
 		$ret = $mailbox;
 
