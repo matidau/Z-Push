@@ -224,7 +224,7 @@ class Message
 			$messageEntry = (object)[
 				'subject' => $message->envelope[1],
 				'from' => \PHPFUI\Imap2\Functions::writeAddressFromEnvelope($message->envelope[2]),
-				'to' => $message->get('to'),
+				'to' => \PHPFUI\Imap2\Functions::writeAddressFromEnvelope($message->envelope[5]),
 				'date' => $message->envelope[0],
 				'message_id' => $message->envelope[9],
 				'references' => $message->references,
